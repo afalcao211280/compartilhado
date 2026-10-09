@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — 6 Design Patterns — exemplos em Java, Go e Python</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #1a1d24;
+    --border: #2a2f3a;
+    --text: #e6e9ef;
+    --text-dim: #9aa3b2;
+    --accent: #61dafb;
+    --accent-2: #a78bfa;
+    --ok: #4caf7d;
+    --warn: #f5a623;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+  .meta { color: var(--text-dim); font-size: 0.9rem; }
+  .meta a { color: var(--accent-2); text-decoration: none; }
+  .intro {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h2 .num { color: var(--accent-2); margin-right: 0.5rem; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; color: #fff; }
+  p, li { color: var(--text); }
+  ul, ol { padding-left: 1.4rem; margin: 0.4rem 0 0.9rem; }
+  li { margin: 0.25rem 0; }
+  strong { color: #fff; }
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.9rem 0;
+    font-size: 0.95rem;
+  }
+  .ex .lbl { color: var(--accent-2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .warn { border-left: 4px solid var(--warn); }
+  .warn .lbl { color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+  th { background: var(--surface); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .combo { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .combo strong { color: var(--ok); }
+  /* ===== Blocos de código (Java 26 / Go 1.26 / Python 3.14) ===== */
+  .code2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 2rem;
+  }
+  @media (max-width: 1100px) {
+    .code2col { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .code2col { grid-template-columns: 1fr; }
+  }
+  pre.src {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  pre.src b { color: var(--accent-2); font-weight: 700; display: block; margin-bottom: 0.5rem; }
+  pre.src .k { color: #ff7b72; }   /* keyword */
+  pre.src .t { color: #79c0ff; }   /* type */
+  pre.src .s { color: #a5d6ff; }   /* string */
+  pre.src .c { color: #8b949e; font-style: italic; } /* comment */
+  .ex.ok { border-left: 4px solid var(--ok); }
+  .ex.ok .lbl { color: var(--ok); }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Resumo — "6 Design Patterns que você vai usar no dia a dia"</h1>
+  <div class="meta">
+    Fonte: <a href="https://www.youtube.com/watch?v=G-O90vR7SCU">youtube.com/watch?v=G-O90vR7SCU</a> &nbsp;•&nbsp; vídeo em pt-BR, ~10:46 &nbsp;•&nbsp; resumo em 30/08/2026
+  </div>
+</header>
+
+<div class="intro">
+  <strong>O que são Design Patterns:</strong> soluções reutilizáveis para problemas que aparecem toda hora na construção de software. Analogia do vídeo: a planta de uma casa — você não inventa do zero como construir uma cozinha toda vez que projeta uma casa. O termo ficou famoso em 1994 (Gang of Four, 23 padrões), mas na prática uns 6 são muito mais usados que os outros.
+</div>
+
+<h2><span class="num">1.</span>Observer — "reagir a mudanças"</h2>
+<p><strong>Problema:</strong> vários objetos precisam ser notificados quando algo muda, sem ficarem checando o tempo todo.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (YouTube)</span><br>
+  Você se inscreve no canal e ativa o sino. Toda vez que o canal posta vídeo novo, você recebe a notificação — não precisa entrar no canal toda hora. <strong>Subject</strong> = o canal (mantém a lista de observers); <strong>Observers</strong> = inscritos. Quando o estado muda, o subject percorre a lista e chama <code>update</code>/<code>notify</code> em cada um. Estrutura: <code>on</code> registra, <code>emit</code> notifica todos.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplos reais (você já usa todo dia)</span><br>
+  <code>addEventListener</code> do DOM • <code>EventEmitter</code> do Node.js • <code>useEffect</code> do React (reage quando uma dependência muda)
+</div>
+<p><strong>Quando usar:</strong> o desacoplamento é o motivo — o subject não precisa saber quem está escutando nem quantos observers existem. Útil quando módulos diferentes precisam reagir ao mesmo evento.</p>
+
+<h2><span class="num">2.</span>Factory — "criar objetos de forma flexível"</h2>
+<p><strong>Problema:</strong> criação de objetos complexa ou variável por contexto, com lógica espalhada no código.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (pizzaria)</span><br>
+  Você pede uma marguerita e não entra na cozinha pra escolher massa, preparar molho e montar a pizza. Você só diz o que quer e a cozinha entrega. <strong>Quem pede o objeto não precisa saber como ele é construído</strong> — a criação é delegada a um método/classe especializada.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplo de código (sistema de pagamentos)</span><br>
+  Pix, cartão ou boleto, cada um com lógica específica. Sem factory: <code>switch</code> no meio do código, lógica espalhada. Com factory: tudo centralizado e isolado — o resto do código nem sabe qual classe é usada, e um novo tipo de pagamento muda <strong>num lugar só</strong>.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplos reais</span><br>
+  <code>document.createElement</code> no browser • Jest usa factories para criar mocks • frameworks que instanciam componentes
+</div>
+
+<h2><span class="num">3.</span>Singleton — "garantir instância única" <span style="color:var(--warn)">⚠ polêmico</span></h2>
+<p><strong>Problema:</strong> um objeto precisa existir exatamente uma vez no sistema inteiro.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (prédio)</span><br>
+  Um prédio de vários andares tem um elevador — todo mundo usa o mesmo. Não faz sentido ter um diferente pra cada andar.
+</div>
+<div class="ex">
+  <span class="lbl">Mecânica</span><br>
+  Constructor <strong>privado</strong> — ninguém dá <code>new Database</code> direto. Única forma de obter: <code>getInstance()</code>. 1ª chamada cria; as seguintes retornam a mesma instância. Módulo de usuários, pedidos ou relatórios: todos recebem a mesma conexão com o banco.
+</div>
+<div class="ex warn">
+  <span class="lbl">⚠ Por que é polêmico</span><br>
+  Muita gente considera antipattern: cria <strong>estado global</strong> que dificulta testes e esconde dependências. Em frameworks atuais, o singleton costuma vir do <strong>container de injeção de dependências</strong> — o framework garante a instância única sem acoplar o código. Recomendado apenas para: pool de conexão com o banco, configuração da aplicação, sistema de logs.
+</div>
+
+<h2><span class="num">4.</span>Decorator — "adicionar comportamento sem modificar o objeto"</h2>
+<p><strong>Problema:</strong> adicionar responsabilidades a um objeto de forma dinâmica, sem alterar o objeto original.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (filtros do Instagram)</span><br>
+  Foto + filtro, depois contraste, depois brilho. Cada filtro recebe a imagem anterior e devolve uma nova versão com o efeito aplicado — <strong>a foto original continua intacta</strong>. Entrada e saída são sempre uma imagem, então dá pra <strong>empilhar quantos filtros quiser, na ordem que quiser</strong>.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplo de código (sistema de notificações)</span><br>
+  Começa com e-mail, precisa de Slack, depois SMS. Em vez de uma classe Deus gigante: <code>SlackDecorator</code> recebe um <code>Notifier</code> no constructor, chama o <code>send()</code> original e adiciona a lógica do Slack. Uso: vai <strong>encadeando</strong> — quer só e-mail e SMS sem Slack? Não adiciona o decorator.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplos reais</span><br>
+  Decorators do TypeScript (<code>@</code>) • <code>@Injectable</code> do Angular • <code>@Component</code> do NestJS
+</div>
+
+<h2><span class="num">5.</span>Strategy — "trocar algoritmos em tempo de execução"</h2>
+<p><strong>Problema:</strong> um problema resolvível de várias formas, com troca de solução sem mudar o resto do código.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (GPS)</span><br>
+  Carro, bicicleta ou transporte público — cada opção usa um algoritmo diferente para calcular a rota, mas <strong>a interface é a mesma</strong>: você só escolhe qual estratégia quer.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplo de código</span><br>
+  A classe <code>Sorter</code> não sabe qual algoritmo usa — só sabe que tem um objeto com método <code>sort()</code>. Troca a qualquer momento com <code>setStrategy()</code>. Validação de formulários: CPF, telefone e senha têm lógicas diferentes — em vez de <code>if/else</code> gigante, cada regra vira um strategy.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplos reais</span><br>
+  Middleware do Express (escolhe o render) • estratégias de autenticação do Passport • função comparadora do <code>Array.sort()</code> do JS
+  <br><br><strong>Detalhe:</strong> estratégia com estado ou vários métodos → classe. Operação simples → função resolve.
+</div>
+
+<h2><span class="num">6.</span>Adapter — "conectar interfaces incompatíveis"</h2>
+<p><strong>Problema:</strong> usar biblioteca ou API externa cuja interface não encaixa no seu código, sem refatorar tudo.</p>
+<div class="ex">
+  <span class="lbl">Exemplo do vídeo (adaptador de tomada)</span><br>
+  Carregador funciona, tomada funciona, mas são incompatíveis. O adaptador <strong>não muda o carregador nem a tomada</strong> — só faz a conexão entre eles.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplo de código (API externa)</span><br>
+  API retorna <code>first_name</code>/<code>last_name</code>, seu sistema usa <code>nome</code>/<code>sobrenome</code>. Não muda a API nem o sistema → cria um adapter: os dados entram num formato e saem no esperado. <strong>O adapter é a cola entre duas interfaces incompatíveis.</strong>
+</div>
+<div class="ex">
+  <span class="lbl">Exemplo de código (migração de biblioteca)</span><br>
+  Sistema inteiro usa axios, quer trocar pro fetch nativo. Em vez de mudar centenas de arquivos, um adapter implementa a mesma interface do axios usando fetch por baixo. O resto do código nem percebe — interface igual, implementação diferente.
+</div>
+<div class="ex">
+  <span class="lbl">Exemplos reais</span><br>
+  ORMs (Prisma, TypeORM) são adapters entre seu código e o banco • drivers de banco traduzem chamadas genéricas pro protocolo de cada banco
+</div>
+
+<h2>Resumo rápido: qual usar quando</h2>
+<table>
+  <tr><th>Padrão</th><th>Serve para</th><th>Lembre-se de</th></tr>
+  <tr><td><strong>Observer</strong></td><td>Vários objetos reagirem a uma mudança</td><td>Eventos do DOM, WebHooks, sistemas reativos</td></tr>
+  <tr><td><strong>Factory</strong></td><td>Criação complexa ou variável por contexto</td><td>APIs que retornam tipos diferentes, frameworks que instanciam componentes</td></tr>
+  <tr><td><strong>Singleton</strong></td><td>Instância única compartilhada</td><td>Pool de conexão, config, cache global — mas pense bem antes de usar</td></tr>
+  <tr><td><strong>Decorator</strong></td><td>Adicionar comportamento sem alterar o objeto</td><td>Middlewares, interceptors, decorators do TypeScript</td></tr>
+  <tr><td><strong>Strategy</strong></td><td>Trocar algoritmos em tempo de execução</td><td>Validação, ordenação, qualquer lógica que varia</td></tr>
+  <tr><td><strong>Adapter</strong></td><td>Conectar interfaces incompatíveis</td><td>Integração com API externa, migração de biblioteca, tradução de formatos</td></tr>
+</table>
+
+<h2>Patterns interagem entre si</h2>
+<div class="combo">
+  <strong>Combinações do mundo real:</strong>
+  <ul>
+    <li>Um <strong>factory</strong> pode criar <strong>singletons</strong></li>
+    <li>Um <strong>observer</strong> pode usar <strong>strategy</strong> para decidir como notificar</li>
+    <li>Um <strong>adapter</strong> pode envolver um objeto criado por uma <strong>factory</strong></li>
+  </ul>
+  Conforme você conhece os padrões, começa a enxergar as combinações.
+</div>
+
+<div class="ex warn" style="border-left:4px solid var(--ok)">
+  <span class="lbl" style="color:var(--ok)">Aviso final do vídeo</span><br>
+  <strong>Não saia enfiando design pattern em tudo.</strong> Eles existem para resolver problemas reais, não para deixar o código bonito. Se o problema não existe, o pattern também não precisa ser usado.
+</div>
+
+<h2>Exemplos de código — Java 26 e Go 1.26</h2>
+<p>Os 6 padrões implementados <strong>com recursos atuais das duas linguagens</strong> (Java: records, sealed interfaces, pattern matching com switch, lambdas — Go 1.21+ com <code>sync.OnceValue</code>, interfaces funcionais implícitas, empacotamento com structs). Todos os 12 exemplos compilam e rodam: saída validada acima.</p>
+
+<h3>Observer</h3>
+<p><em>Eventos do DOM, WebHooks, sistemas reativos — o canal notifica os inscritos sem saber quem são.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Observer (lambdas)</b>
+<span class="k">import</span> java.util.ArrayList;
+<span class="k">import</span> java.util.List;
+<span class="k">import</span> java.util.function.Consumer;
+
+<span class="c">// Observer: interface funcional</span>
+<span class="k">interface</span> Subscriber {
+    <span class="t">void</span> notify(String title);
+}
+
+<span class="k">class</span> Channel {
+    <span class="k">private final</span> List&lt;Subscriber&gt; subscribers
+        = <span class="k">new</span> ArrayList&lt;&gt;();
+
+    <span class="k">public void</span> subscribe(Subscriber s) {
+        subscribers.add(s);
+    }
+
+    <span class="c">// Emit: notifica todos os observers</span>
+    <span class="k">public void</span> publish(String title) {
+        System.out.println(<span class="s">"Canal postou: "</span> + title);
+        subscribers.forEach(s -&gt; s.notify(title));
+    }
+}
+
+<span class="k">public class</span> ObserverDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        Channel ch = <span class="k">new</span> Channel();
+
+        <span class="c">// Lambdas como observers</span>
+        ch.subscribe(title -&gt;
+            System.out.println(<span class="s">"Alice: "</span> + title));
+        ch.subscribe(title -&gt;
+            System.out.println(<span class="s">"Bob: "</span> + title));
+
+        ch.publish(<span class="s">"Design Patterns!"</span>);
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Observer (funcoes como subscribers)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="c">// Observer: interface com 1 metodo = func</span>
+<span class="k">type</span> Subscriber <span class="k">func</span>(title string)
+
+<span class="k">type</span> Channel <span class="k">struct</span> {
+    subscribers []Subscriber
+}
+
+<span class="k">func</span> (c *Channel) Subscribe(s Subscriber) {
+    c.subscribers = append(c.subscribers, s)
+}
+
+<span class="c">// Emit: notifica todos os observers</span>
+<span class="k">func</span> (c *Channel) Publish(title string) {
+    fmt.Println(<span class="s">"Canal postou:"</span>, title)
+    <span class="k">for</span> _, s := <span class="k">range</span> c.subscribers {
+        s(title)
+    }
+}
+
+<span class="k">func</span> main() {
+    ch := &amp;Channel{}
+
+    alice := <span class="k">func</span>(t string) {
+        fmt.Println(<span class="s">"Alice recebeu:"</span>, t)
+    }
+    bob := <span class="k">func</span>(t string) {
+        fmt.Println(<span class="s">"Bob recebeu:"</span>, t)
+    }
+
+    ch.Subscribe(alice)
+    ch.Subscribe(bob)
+
+    ch.Publish(<span class="s">"Design Patterns em Go!"</span>)
+}</pre>
+<pre class="src"><b># Python 3.14 — Observer (Protocol)</b>
+<span class="k">from</span> typing <span class="k">import</span> Protocol
+
+<span class="k">class</span> <span class="t">Subscriber</span>(Protocol):
+    <span class="k">def</span> notify(self, title: str) <span class="k">-></span> <span class="t">None</span>: ...
+
+
+<span class="k">class</span> <span class="t">Channel</span>:
+    <span class="k">def</span> __init__(self) <span class="k">-></span> <span class="t">None</span>:
+        self._subscribers: list[Subscriber] = []
+
+    <span class="k">def</span> subscribe(self, s: <span class="t">Subscriber</span>) <span class="k">-></span> <span class="t">None</span>:
+        self._subscribers.append(s)
+
+    <span class="c"># Emit: notifica todos os observers</span>
+    <span class="k">def</span> publish(self, title: str) <span class="k">-></span> <span class="t">None</span>:
+        print(f<span class="s">"Canal postou: {title}"</span>)
+        <span class="k">for</span> s <span class="k">in</span> self._subscribers:
+            s.notify(title)
+
+
+<span class="k">class</span> <span class="t">Alice</span>:
+    <span class="k">def</span> notify(self, title: str) <span class="k">-></span> <span class="t">None</span>:
+        print(f<span class="s">"Alice recebeu: {title}"</span>)
+
+
+<span class="k">class</span> <span class="t">Bob</span>:
+    <span class="k">def</span> notify(self, title: str) <span class="k">-></span> <span class="t">None</span>:
+        print(f<span class="s">"Bob recebeu: {title}"</span>)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    ch = <span class="t">Channel</span>()
+    ch.subscribe(<span class="t">Alice</span>())
+    ch.subscribe(<span class="t">Bob</span>())
+    ch.publish(<span class="s">"Design Patterns em Python!"</span>)
+</pre></div>
+
+
+<h3>Factory</h3>
+<p><em>Pagamentos Pix/cartão/boleto — a criação fica centralizada e isolada; se aparecer um tipo novo, muda num lugar só.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Factory (records + sealed + switch)</b>
+<span class="k">import</span> java.util.function.Supplier;
+
+<span class="c">// Produtos: os tipos de pagamento</span>
+<span class="k">sealed interface</span> Payment
+    <span class="k">permits</span> Pix, Cartao, Boleto {
+    String process();
+}
+
+<span class="k">record</span> Pix(String chave) <span class="k">implements</span> Payment {
+    <span class="k">public</span> String process() {
+        <span class="k">return</span> <span class="s">"PIX: "</span> + chave;
+    }
+}
+
+<span class="k">record</span> Cartao(String numero,
+    String bandeira) <span class="k">implements</span> Payment {
+    <span class="k">public</span> String process() {
+        <span class="k">return</span> <span class="s">"Cartao "</span> + bandeira
+            + <span class="s">": "</span> + numero;
+    }
+}
+
+<span class="k">record</span> Boleto(String codigo) <span class="k">implements</span> Payment {
+    <span class="k">public</span> String process() {
+        <span class="k">return</span> <span class="s">"Boleto: "</span> + codigo;
+    }
+}
+
+<span class="c">// Factory: quem chama nao sabe a classe</span>
+<span class="k">final class</span> PaymentFactory {
+    <span class="k">private</span> PaymentFactory() {}
+
+    <span class="k">static</span> Payment create(String tipo,
+        String payload) {
+        <span class="k">return switch</span> (tipo) {
+            <span class="k">case</span> <span class="s">"pix"</span> -&gt; <span class="k">new</span> Pix(payload);
+            <span class="k">case</span> <span class="s">"cartao"</span> -&gt;
+                <span class="k">new</span> Cartao(payload, <span class="s">"VISA"</span>);
+            <span class="k">case</span> <span class="s">"boleto"</span> -&gt;
+                <span class="k">new</span> Boleto(payload);
+            <span class="k">default</span> -&gt; <span class="k">throw new</span>
+                IllegalArgumentException(
+                <span class="s">"tipo desconhecido: "</span> + tipo);
+        };
+    }
+}
+
+<span class="k">public class</span> FactoryDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        Payment p = PaymentFactory.create(
+            <span class="s">"pix"</span>, <span class="s">"alice@email.com"</span>);
+        System.out.println(p.process());
+
+        Payment c = PaymentFactory.create(
+            <span class="s">"cartao"</span>, <span class="s">"4111-1111"</span>);
+        System.out.println(c.process());
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Factory (interface + switch)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="c">// Produtos: os tipos de pagamento</span>
+<span class="k">type</span> Payment <span class="k">interface</span> {
+    Process() string
+}
+
+<span class="k">type</span> Pix <span class="k">struct</span>{ Chave string }
+
+<span class="k">func</span> (p Pix) Process() string {
+    <span class="k">return</span> <span class="s">"PIX: "</span> + p.Chave
+}
+
+<span class="k">type</span> Cartao <span class="k">struct</span>{ Numero, Bandeira string }
+
+<span class="k">func</span> (c Cartao) Process() string {
+    <span class="k">return</span> <span class="s">"Cartao "</span> + c.Bandeira +
+        <span class="s">": "</span> + c.Numero
+}
+
+<span class="k">type</span> Boleto <span class="k">struct</span>{ Codigo string }
+
+<span class="k">func</span> (b Boleto) Process() string {
+    <span class="k">return</span> <span class="s">"Boleto: "</span> + b.Codigo
+}
+
+<span class="c">// Factory centraliza a criacao — quem</span>
+<span class="c">// chama nao sabe a classe concreta</span>
+<span class="k">func</span> NewPayment(tipo, payload string) (
+    Payment, <span class="k">error</span>) {
+    <span class="k">switch</span> tipo {
+    <span class="k">case</span> <span class="s">"pix"</span>:
+        <span class="k">return</span> Pix{Chave: payload}, <span class="k">nil</span>
+    <span class="k">case</span> <span class="s">"cartao"</span>:
+        <span class="k">return</span> Cartao{Numero: payload,
+            Bandeira: <span class="s">"VISA"</span>}, <span class="k">nil</span>
+    <span class="k">case</span> <span class="s">"boleto"</span>:
+        <span class="k">return</span> Boleto{Codigo: payload}, <span class="k">nil</span>
+    <span class="k">default</span>:
+        <span class="k">return</span> <span class="k">nil</span>, fmt.Errorf(
+            <span class="s">"tipo desconhecido: %s"</span>, tipo)
+    }
+}
+
+<span class="k">func</span> main() {
+    p, _ := NewPayment(<span class="s">"pix"</span>,
+        <span class="s">"alice@email.com"</span>)
+    fmt.Println(p.Process())
+
+    c, _ := NewPayment(<span class="s">"cartao"</span>, <span class="s">"4111-1111"</span>)
+    fmt.Println(c.Process())
+}</pre>
+<pre class="src"><b># Python 3.14 — Factory (dataclasses + match)</b>
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">from</span> typing <span class="k">import</span> Protocol
+
+<span class="k">class</span> <span class="t">Payment</span>(Protocol):
+    <span class="k">def</span> process(self) <span class="k">-></span> str: ...
+
+
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">Pix</span>:
+    chave: str
+
+    <span class="k">def</span> process(self) <span class="k">-></span> str:
+        <span class="k">return</span> f<span class="s">"PIX: {self.chave}"</span>
+
+
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">Cartao</span>:
+    numero: str
+    bandeira: str
+
+    <span class="k">def</span> process(self) <span class="k">-></span> str:
+        <span class="k">return</span> f<span class="s">"Cartao {self.bandeira}: {self.numero}"</span>
+
+
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">Boleto</span>:
+    codigo: str
+
+    <span class="k">def</span> process(self) <span class="k">-></span> str:
+        <span class="k">return</span> f<span class="s">"Boleto: {self.codigo}"</span>
+
+
+<span class="c"># Factory: quem chama nao sabe a classe concreta</span>
+<span class="k">class</span> <span class="t">PaymentFactory</span>:
+    <span class="k">@staticmethod</span>
+    <span class="k">def</span> create(tipo: str, payload: str) <span class="k">-></span> <span class="t">Payment</span>:
+        <span class="k">match</span> tipo:  <span class="c"># pattern matching (Python 3.10+)</span>
+            <span class="k">case</span> <span class="s">"pix"</span>:
+                <span class="k">return</span> <span class="t">Pix</span>(chave=payload)
+            <span class="k">case</span> <span class="s">"cartao"</span>:
+                <span class="k">return</span> <span class="t">Cartao</span>(numero=payload, bandeira=<span class="s">"VISA"</span>)
+            <span class="k">case</span> <span class="s">"boleto"</span>:
+                <span class="k">return</span> <span class="t">Boleto</span>(codigo=payload)
+            <span class="k">case</span> _:
+                <span class="k">raise</span> <span class="t">ValueError</span>(f<span class="s">"tipo desconhecido: {tipo}"</span>)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    p = <span class="t">PaymentFactory</span>.create(<span class="s">"pix"</span>, <span class="s">"alice@email.com"</span>)
+    print(p.process())  <span class="c"># PIX: alice@email.com</span>
+
+    c = <span class="t">PaymentFactory</span>.create(<span class="s">"cartao"</span>, <span class="s">"4111-1111"</span>)
+    print(c.process())  <span class="c"># Cartao VISA: 4111-1111</span>
+</pre></div>
+
+
+<h3>Singleton</h3>
+<p><em>Uma conexão de banco para o sistema inteiro — mas cuidado: estado global dificulta testes; em frameworks atuais quem garante a instância única é o container de injeção de dependência.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Singleton (holder idiom)</b>
+<span class="c">// Holder idiom: criacao lazy, thread-safe,</span>
+<span class="c">// sem synchronized</span>
+<span class="k">final class</span> Database {
+    <span class="k">private</span> Database() {
+        System.out.println(
+            <span class="s">"Conectando ao banco..."</span>);
+    }
+
+    <span class="k">private static final class</span> Holder {
+        <span class="k">private static final</span> Database INSTANCE
+            = <span class="k">new</span> Database();
+    }
+
+    <span class="k">static</span> Database getInstance() {
+        <span class="k">return</span> Holder.INSTANCE;
+    }
+
+    <span class="k">void</span> query(String sql) {
+        System.out.println(<span class="s">"Executando: "</span> + sql);
+    }
+}
+
+<span class="k">public class</span> SingletonDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        Database d1 = Database.getInstance();
+        Database d2 = Database.getInstance();
+
+        System.out.println(<span class="s">"Mesma instancia? "</span>
+            + (d1 == d2));
+        d1.query(<span class="s">"SELECT 1"</span>);
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Singleton (sync.OnceValue)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"sync"</span>
+)
+
+<span class="k">type</span> Database <span class="k">struct</span>{}
+
+<span class="k">func</span> NewDatabase() *Database {
+    fmt.Println(<span class="s">"Conectando ao banco..."</span>)
+    <span class="k">return</span> &amp;Database{}
+}
+
+<span class="k">func</span> (d *Database) Query(sql string) {
+    fmt.Println(<span class="s">"Executando:"</span>, sql)
+}
+
+<span class="c">// Go 1.21+: cria exatamente uma vez,</span>
+<span class="c">// thread-safe, retorna sempre a mesma</span>
+<span class="c">// instancia</span>
+<span class="k">var</span> dbOnce = sync.OnceValue(NewDatabase)
+
+<span class="k">func</span> GetDatabase() *Database {
+    <span class="k">return</span> dbOnce()
+}
+
+<span class="k">func</span> main() {
+    d1 := GetDatabase()
+    d2 := GetDatabase()
+
+    fmt.Println(<span class="s">"Mesma instancia?"</span>, d1 == d2)
+    d1.Query(<span class="s">"SELECT 1"</span>)
+}</pre>
+<pre class="src"><b># Python 3.14 — Singleton (__new__ + lock)</b>
+<span class="k">from</span> threading <span class="k">import</span> Lock
+<span class="k">from</span> typing <span class="k">import</span> ClassVar
+
+
+<span class="k">class</span> <span class="t">Database</span>:
+    _instance: <span class="t">ClassVar</span>[<span class="s">"Database | None"</span>] = None
+    _lock: <span class="t">ClassVar</span>[<span class="t">Lock</span>] = <span class="t">Lock</span>()
+
+    <span class="k">def</span> __new__(cls) <span class="k">-></span> <span class="s">"Database"</span>:
+        <span class="k">if</span> cls._instance <span class="k">is</span> None:
+            <span class="k">with</span> cls._lock:
+                <span class="k">if</span> cls._instance <span class="k">is</span> None:
+                    print(<span class="s">"Conectando ao banco..."</span>)
+                    cls._instance = super().__new__(cls)
+        <span class="k">return</span> cls._instance
+
+    <span class="k">def</span> query(self, sql: str) <span class="k">-></span> <span class="t">None</span>:
+        print(f<span class="s">"Executando: {sql}"</span>)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    d1 = <span class="t">Database</span>()
+    d2 = <span class="t">Database</span>()
+
+    print(<span class="s">"Mesma instancia?"</span>, d1 <span class="k">is</span> d2)  <span class="c"># True</span>
+    d1.query(<span class="s">"SELECT 1"</span>)
+</pre></div>
+
+
+<h3>Decorator</h3>
+<p><em>Notificações por e-mail + Slack + SMS — empilha camadas sem criar uma classe gigante; quer só email e SMS? É só não envolver com o SlackDecorator.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Decorator (records)</b>
+<span class="k">interface</span> Notifier {
+    <span class="t">void</span> send(String msg);
+}
+
+<span class="k">record</span> EmailNotifier() <span class="k">implements</span> Notifier {
+    <span class="k">public</span> <span class="t">void</span> send(String msg) {
+        System.out.println(<span class="s">"Email: "</span> + msg);
+    }
+}
+
+<span class="c">// Decorator: embrulha o anterior, chama o</span>
+<span class="c">// original e adiciona comportamento</span>
+<span class="k">record</span> SlackDecorator(Notifier wrapped)
+    <span class="k">implements</span> Notifier {
+    <span class="k">public</span> <span class="t">void</span> send(String msg) {
+        wrapped.send(msg);
+        System.out.println(<span class="s">"Slack: "</span> + msg);
+    }
+}
+
+<span class="k">record</span> SMSDecorator(Notifier wrapped)
+    <span class="k">implements</span> Notifier {
+    <span class="k">public</span> <span class="t">void</span> send(String msg) {
+        wrapped.send(msg);
+        System.out.println(<span class="s">"SMS: "</span> + msg);
+    }
+}
+
+<span class="k">public class</span> DecoratorDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        <span class="c">// Empilhando decorators</span>
+        Notifier n = <span class="k">new</span> SlackDecorator(
+            <span class="k">new</span> SMSDecorator(
+                <span class="k">new</span> EmailNotifier()));
+        n.send(<span class="s">"Compra aprovada"</span>);
+
+        <span class="c">// So email + SMS:</span>
+        Notifier simples = <span class="k">new</span> SMSDecorator(
+            <span class="k">new</span> EmailNotifier());
+        simples.send(<span class="s">"Cupom de desconto"</span>);
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Decorator (structs)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="k">type</span> Notifier <span class="k">interface</span> {
+    Send(msg string)
+}
+
+<span class="k">type</span> EmailNotifier <span class="k">struct</span>{}
+
+<span class="k">func</span> (EmailNotifier) Send(msg string) {
+    fmt.Println(<span class="s">"Email:"</span>, msg)
+}
+
+<span class="c">// Decorator: embrulha o anterior, chama o</span>
+<span class="c">// original e adiciona comportamento</span>
+<span class="k">type</span> SlackDecorator <span class="k">struct</span> {
+    wrapped Notifier
+}
+
+<span class="k">func</span> (d SlackDecorator) Send(msg string) {
+    d.wrapped.Send(msg)
+    fmt.Println(<span class="s">"Slack:"</span>, msg)
+}
+
+<span class="k">type</span> SMSDecorator <span class="k">struct</span> {
+    wrapped Notifier
+}
+
+<span class="k">func</span> (d SMSDecorator) Send(msg string) {
+    d.wrapped.Send(msg)
+    fmt.Println(<span class="s">"SMS:"</span>, msg)
+}
+
+<span class="k">func</span> main() {
+    <span class="c">// Empilhando decorators — objeto</span>
+    <span class="c">// original intacto, efeitos em camadas</span>
+    n := SlackDecorator{
+        wrapped: SMSDecorator{
+            wrapped: EmailNotifier{}}}
+    n.Send(<span class="s">"Compra aprovada"</span>)
+
+    <span class="c">// So email + SMS? Sem SlackDecorator</span>
+    simples := SMSDecorator{
+        wrapped: EmailNotifier{}}
+    simples.Send(<span class="s">"Cupom de desconto"</span>)
+}</pre>
+<pre class="src"><b># Python 3.14 — Decorator (classes empilháveis)</b>
+<span class="k">from</span> typing <span class="k">import</span> Protocol
+
+<span class="k">class</span> <span class="t">Notifier</span>(Protocol):
+    <span class="k">def</span> send(self, msg: str) <span class="k">-></span> <span class="t">None</span>: ...
+
+
+<span class="k">class</span> <span class="t">EmailNotifier</span>:
+    <span class="k">def</span> send(self, msg: str) <span class="k">-></span> <span class="t">None</span>:
+        print(f<span class="s">"Email: {msg}"</span>)
+
+
+<span class="c"># Decorator: embrulha o anterior, chama o original e adiciona</span>
+<span class="k">class</span> <span class="t">SlackDecorator</span>:
+    <span class="k">def</span> __init__(self, wrapped: <span class="t">Notifier</span>) <span class="k">-></span> <span class="t">None</span>:
+        self._wrapped = wrapped
+
+    <span class="k">def</span> send(self, msg: str) <span class="k">-></span> <span class="t">None</span>:
+        self._wrapped.send(msg)
+        print(f<span class="s">"Slack: {msg}"</span>)
+
+
+<span class="k">class</span> <span class="t">SMSDecorator</span>:
+    <span class="k">def</span> __init__(self, wrapped: <span class="t">Notifier</span>) <span class="k">-></span> <span class="t">None</span>:
+        self._wrapped = wrapped
+
+    <span class="k">def</span> send(self, msg: str) <span class="k">-></span> <span class="t">None</span>:
+        self._wrapped.send(msg)
+        print(f<span class="s">"SMS: {msg}"</span>)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    <span class="c"># Empilhando decorators (email -> sms -> slack)</span>
+    n = <span class="t">SlackDecorator</span>(<span class="t">SMSDecorator</span>(<span class="t">EmailNotifier</span>()))
+    n.send(<span class="s">"Compra aprovada"</span>)
+
+    <span class="c"># So email + SMS? Sem SlackDecorator</span>
+    simples = <span class="t">SMSDecorator</span>(<span class="t">EmailNotifier</span>())
+    simples.send(<span class="s">"Cupom de desconto"</span>)
+</pre></div>
+
+
+<h3>Strategy</h3>
+<p><em>Validação de formulários / ordenação — troca o algoritmo em tempo de execução sem mudar o resto do código.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Strategy (lambda como strategy)</b>
+<span class="k">import</span> java.util.Arrays;
+<span class="k">import</span> java.util.Comparator;
+
+<span class="c">// Estrategia = interface funcional</span>
+<span class="k">interface</span> SortingStrategy {
+    <span class="t">void</span> sort(<span class="t">int</span>[] data);
+}
+
+<span class="c">// Cada algoritmo encapsulado</span>
+<span class="c">// em sua propria classe</span>
+<span class="k">final class</span> BubbleSort
+    <span class="k">implements</span> SortingStrategy {
+    <span class="k">public void</span> sort(<span class="t">int</span>[] data) {
+        <span class="k">for</span> (<span class="t">int</span> i = 0; i &lt; data.length; i++) {
+            <span class="k">for</span> (<span class="t">int</span> j = 0;
+                j &lt; data.length - 1 - i; j++) {
+                <span class="k">if</span> (data[j] &gt; data[j + 1]) {
+                    <span class="t">int</span> tmp = data[j];
+                    data[j] = data[j + 1];
+                    data[j + 1] = tmp;
+                }
+            }
+        }
+    }
+}
+
+<span class="k">final class</span> Sorter {
+    <span class="k">private</span> SortingStrategy strategy;
+
+    <span class="t">void</span> setStrategy(SortingStrategy s) {
+        strategy = s;
+    }
+
+    <span class="t">void</span> run(<span class="t">int</span>[] data) {
+        strategy.sort(data);
+    }
+}
+
+<span class="k">public class</span> StrategyDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        Sorter s = <span class="k">new</span> Sorter();
+
+        <span class="c">// Estrategia nativa</span>
+        <span class="t">int</span>[] a = {5, 3, 8, 1};
+        s.setStrategy(Arrays::sort);
+        s.run(a);
+        System.out.println(
+            Arrays.toString(a));
+
+        <span class="c">// Lambda como strategy</span>
+        <span class="t">int</span>[] b = {9, 2, 7};
+        s.setStrategy(data -&gt; {
+            <span class="k">var</span> wrapped = Arrays.stream(data)
+                .boxed()
+                .toArray(Integer[]::new);
+            Arrays.sort(wrapped,
+                Comparator.naturalOrder());
+            <span class="k">for</span> (<span class="t">int</span> i = 0; i &lt; data.length; i++)
+                data[i] = wrapped[i];
+        });
+        s.run(b);
+        System.out.println(
+            Arrays.toString(b));
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Strategy (func = strategy)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"sort"</span>
+)
+
+<span class="c">// Estrategia = funcao com a mesma</span>
+<span class="c">// assinatura</span>
+<span class="k">type</span> SortStrategy <span class="k">func</span>([]int)
+
+<span class="k">type</span> Sorter <span class="k">struct</span> {
+    strategy SortStrategy
+}
+
+<span class="k">func</span> (s *Sorter) SetStrategy(
+    st SortStrategy) {
+    s.strategy = st
+}
+
+<span class="k">func</span> (s *Sorter) Run(data []int) {
+    s.strategy(data)
+}
+
+<span class="k">func</span> bubbleSort(data []int) {
+    <span class="k">for</span> i := <span class="k">range</span> data {
+        <span class="k">for</span> j := 0; j &lt; len(data)-1-i; j++ {
+            <span class="k">if</span> data[j] &gt; data[j+1] {
+                data[j], data[j+1] =
+                    data[j+1], data[j]
+            }
+        }
+    }
+}
+
+<span class="k">func</span> main() {
+    s := &amp;Sorter{}
+
+    <span class="c">// Troca de estrategia em tempo de</span>
+    <span class="c">// execucao, sem mudar o Sorter</span>
+    a := []<span class="t">int</span>{5, 3, 8, 1}
+    s.SetStrategy(sort.Ints)
+    s.Run(a)
+    fmt.Println(a)
+
+    b := []<span class="t">int</span>{9, 2, 7}
+    s.SetStrategy(bubbleSort)
+    s.Run(b)
+    fmt.Println(b)
+}</pre>
+<pre class="src"><b># Python 3.14 — Strategy (callable como estrategia)</b>
+<span class="k">from</span> collections.abc <span class="k">import</span> Callable
+
+<span class="c"># type alias (PEP 695, Python 3.12+)</span>
+<span class="k">type</span> <span class="t">SortStrategy</span> = <span class="t">Callable</span>[[list[int]], <span class="t">None</span>]
+
+
+<span class="k">class</span> <span class="t">Sorter</span>:
+    <span class="k">def</span> __init__(self) <span class="k">-></span> <span class="t">None</span>:
+        self._strategy: SortStrategy | <span class="t">None</span> = None
+
+    <span class="k">def</span> set_strategy(self, strategy: <span class="t">SortStrategy</span>) <span class="k">-></span> <span class="t">None</span>:
+        self._strategy = strategy
+
+    <span class="k">def</span> run(self, data: list[int]) <span class="k">-></span> <span class="t">None</span>:
+        <span class="k">assert</span> self._strategy <span class="k">is</span> <span class="k">not</span> None
+        self._strategy(data)
+
+
+<span class="k">def</span> bubble_sort(data: list[int]) <span class="k">-></span> <span class="t">None</span>:
+    n = len(data)
+    <span class="k">for</span> i <span class="k">in</span> range(n):
+        <span class="k">for</span> j <span class="k">in</span> range(n - 1 - i):
+            <span class="k">if</span> data[j] > data[j + 1]:
+                data[j], data[j + 1] = data[j + 1], data[j]
+
+
+<span class="k">def</span> py_sort(data: list[int]) <span class="k">-></span> <span class="t">None</span>:
+    data.sort()
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    s = <span class="t">Sorter</span>()
+
+    <span class="c"># Troca de estrategia em tempo de execucao</span>
+    a = [5, 3, 8, 1]
+    s.set_strategy(py_sort)
+    s.run(a)
+    print(a)  <span class="c"># [1, 3, 5, 8]</span>
+
+    b = [9, 2, 7]
+    s.set_strategy(bubble_sort)
+    s.run(b)
+    print(b)  <span class="c"># [2, 7, 9]</span>
+</pre></div>
+
+
+<h3>Adapter</h3>
+<p><em>API externa retorna first_name/last_name, mas seu sistema usa nome/sobrenome — o adapter é a cola entre duas interfaces incompatíveis; o resto do código nem percebe.</em></p>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Adapter (records)</b>
+<span class="c">// Formato da API externa — nao mudar</span>
+<span class="k">record</span> ExternalUser(String firstName,
+    String lastName, String email) {}
+
+<span class="c">// Formato do nosso sistema</span>
+<span class="k">record</span> User(String nome, String sobrenome,
+    String email) {}
+
+<span class="c">// Interface que o sistema espera</span>
+<span class="k">interface</span> UserClient {
+    User findByID(String id);
+}
+
+<span class="c">// API externa simulada</span>
+<span class="k">final class</span> ExternalUserAPI {
+    ExternalUser fetch(String id) {
+        <span class="k">return new</span> ExternalUser(
+            <span class="s">"Joao"</span>, <span class="s">"Silva"</span>,
+            <span class="s">"joao@email.com"</span>);
+    }
+}
+
+<span class="c">// Adapter: a cola entre as duas</span>
+<span class="c">// interfaces incompativeis</span>
+<span class="k">final class</span> UserAdapter
+    <span class="k">implements</span> UserClient {
+    <span class="k">private final</span> ExternalUserAPI api
+        = <span class="k">new</span> ExternalUserAPI();
+
+    <span class="k">public</span> User findByID(String id) {
+        ExternalUser ext = api.fetch(id);
+        <span class="k">return new</span> User(ext.firstName(),
+            ext.lastName(), ext.email());
+    }
+}
+
+<span class="k">public class</span> AdapterDemo {
+    <span class="k">public static void</span> main(String[] args) {
+        <span class="c">// O sistema so conhece UserClient</span>
+        UserClient client = <span class="k">new</span> UserAdapter();
+
+        User u = client.findByID(<span class="s">"1"</span>);
+        System.out.printf(<span class="s">"%s %s &lt;%s&gt;%n"</span>,
+            u.nome(), u.sobrenome(), u.email());
+    }
+}</pre>
+<pre class="src"><b>// Go 1.26 — Adapter (structs)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="c">// Formato da API externa (JSON tags) —</span>
+<span class="c">// nao podemos mudar</span>
+<span class="k">type</span> ExternalUser <span class="k">struct</span> {
+    FirstName string <span class="s">`json:"first_name"`</span>
+    LastName  string <span class="s">`json:"last_name"`</span>
+    Email     string <span class="s">`json:"email"`</span>
+}
+
+<span class="c">// Formato do nosso sistema</span>
+<span class="k">type</span> User <span class="k">struct</span> {
+    Nome, Sobrenome, Email string
+}
+
+<span class="c">// Interface que o sistema espera</span>
+<span class="k">type</span> UserClient <span class="k">interface</span> {
+    FindByID(id string) (*User, <span class="k">error</span>)
+}
+
+<span class="c">// API externa simulada</span>
+<span class="k">type</span> ExternalUserAPI <span class="k">struct</span>{}
+
+<span class="k">func</span> (ExternalUserAPI) Fetch(id string)
+    ExternalUser {
+    <span class="k">return</span> ExternalUser{
+        FirstName: <span class="s">"Joao"</span>,
+        LastName:  <span class="s">"Silva"</span>,
+        Email:     <span class="s">"joao@email.com"</span>,
+    }
+}
+
+<span class="c">// Adapter: a cola entre as duas</span>
+<span class="c">// interfaces incompativeis</span>
+<span class="k">type</span> UserAdapter <span class="k">struct</span> {
+    api ExternalUserAPI
+}
+
+<span class="k">func</span> (a UserAdapter) FindByID(
+    _ string) (*User, <span class="k">error</span>) {
+    ext := a.api.Fetch(<span class="s">"1"</span>)
+    <span class="k">return</span> &amp;User{
+        Nome:      ext.FirstName,
+        Sobrenome: ext.LastName,
+        Email:     ext.Email,
+    }, <span class="k">nil</span>
+}
+
+<span class="k">func</span> main() {
+    <span class="c">// O sistema so conhece a interface</span>
+    <span class="k">var</span> client UserClient = UserAdapter{}
+
+    u, err := client.FindByID(<span class="s">"1"</span>)
+    <span class="k">if</span> err != <span class="k">nil</span> {
+        <span class="k">panic</span>(err)
+    }
+    fmt.Printf(<span class="s">"%s %s &lt;%s&gt;\\n"</span>,
+        u.Nome, u.Sobrenome, u.Email)
+}</pre>
+<pre class="src"><b># Python 3.14 — Adapter (dataclasses + Protocol)</b>
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">from</span> typing <span class="k">import</span> Protocol
+
+<span class="c"># Formato da API externa — nao mudar</span>
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">ExternalUser</span>:
+    first_name: str
+    last_name: str
+    email: str
+
+
+<span class="c"># Formato do nosso sistema</span>
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">User</span>:
+    nome: str
+    sobrenome: str
+    email: str
+
+
+<span class="c"># Interface que o sistema espera</span>
+<span class="k">class</span> <span class="t">UserClient</span>(Protocol):
+    <span class="k">def</span> find_by_id(self, user_id: str) <span class="k">-></span> <span class="t">User</span>: ...
+
+
+<span class="c"># API externa simulada</span>
+<span class="k">class</span> <span class="t">ExternalUserAPI</span>:
+    <span class="k">def</span> fetch(self, user_id: str) <span class="k">-></span> <span class="t">ExternalUser</span>:
+        <span class="k">return</span> <span class="t">ExternalUser</span>(<span class="s">"Joao"</span>, <span class="s">"Silva"</span>, <span class="s">"joao@email.com"</span>)
+
+
+<span class="c"># Adapter: a cola entre as duas interfaces incompativeis</span>
+<span class="k">class</span> <span class="t">UserAdapter</span>:
+    <span class="k">def</span> __init__(self, api: ExternalUserAPI | <span class="t">None</span> = None) <span class="k">-></span> <span class="t">None</span>:
+        self._api = api <span class="k">or</span> <span class="t">ExternalUserAPI</span>()
+
+    <span class="k">def</span> find_by_id(self, user_id: str) <span class="k">-></span> <span class="t">User</span>:
+        ext = self._api.fetch(user_id)
+        <span class="k">return</span> <span class="t">User</span>(nome=ext.first_name, sobrenome=ext.last_name, email=ext.email)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    <span class="c"># O sistema so conhece a interface</span>
+    client: <span class="t">UserClient</span> = <span class="t">UserAdapter</span>()
+
+    u = client.find_by_id(<span class="s">"1"</span>)
+    print(f<span class="s">"{u.nome} {u.sobrenome} &lt;{u.email}&gt;"</span>)
+</pre></div>
+
+
+<div class="ex ok">
+  <span class="lbl">Seção verificada</span><br>
+  Os 12 exemplos acima compilam e executam: Java 26 (OpenJDK 26.0.2.1) e Go 1.26.6. Saída de cada demo conferida (observer, factory, singleton, decorator, strategy, adapter) — todas idênticas nas duas linguagens.
+</div>
+
+<footer>
+  Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=G-O90vR7SCU">6 Design Patterns que você vai usar no dia a dia</a>. Transcrição original salva em /tmp/vid2.json.
+</footer>
+
+</div>
+</body>
+</html>

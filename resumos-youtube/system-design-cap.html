@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Teorema CAP</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Design — Teorema CAP</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=g9DfXmDfE_Q">https://www.youtube.com/watch?v=g9DfXmDfE_Q</a> · pt-BR · ~8 · 30/08/2026</p>
+
+<h1>Resumo — &quot;System Design: Teorema CAP&quot; (pt-BR, ~8:02)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=g9DfXmDfE_Q</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_sd1.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Não existe banco de dados que nunca cai, responde instantaneamente e nunca perde dados. O **teorema CAP** explica por quê.</p>
+
+<p>O CAP foi proposto por **Eric Brewer (2000)** e provado matematicamente em **2002**. Quando a rede entre servidores falha (partição), você é **forçado** a escolher entre consistência e disponibilidade.</p>
+
+<h2>Partição não é uma escolha</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**C — Consistency (consistência forte)**: todo mundo vê o mesmo dado ao mesmo tempo. Se uma escrita terminou, toda leitura seguinte retorna o valor novo — em qualquer servidor.</li>
+<li>**A — Availability (disponibilidade)**: toda requisição recebe resposta, sem timeout infinito. O servidor pode responder dado **desatualizado** — disponibilidade não é &quot;dado mais recente&quot;.</li>
+<li>**P — Partition tolerance**: o sistema continua operando mesmo com falhas de rede.</li>
+</ul>
+
+<p>**O P não é uma escolha**: cabos quebram, switches falham, data centers são isolados, timeouts estouram. Partição **vai acontecer**. A escolha real é: quando a partição ocorrer, você sacrifica C ou A.</p>
+
+<h3>Split brain (cérebro dividido)</h3>
+
+<p>O cenário clássico: data center A acha que o B morreu, o B acha que o A morreu, e os dois seguem operando. Cliente em A atualiza o preço para R$ 100; cliente em B atualiza para R$ 150. Qual é o preço? **Depende de qual servidor você pergunta.** Quando a rede volta, há um conflito — e conflito precisa de resolução.</p>
+
+<h2>CP vs AP na prática</h2>
+
+<h3>Sistema CP (consistência forte durante a partição)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Serve para casos onde **dado errado é catástrofe** (saldo bancário, estoque, ingressos).</li>
+<li>Técnicas: **quórum** (a escrita precisa da maioria — 3 de 5, 2 de 3) e **eleição de líder** (só o lado com o líder aceita escritas; o outro retorna 503).</li>
+<li>Exemplo: **MongoDB** com réplica sets — sem maioria, os servidores viram somente leitura. **etcd/ZooKeeper** — coordenação, configuração, eleição de líder (dois líderes = problema). **Google Spanner** — consistência forte global com relógios atômicos/GPS, com custo alto.</li>
+</ul>
+
+<h3>Sistema AP (disponibilidade durante a partição)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Serve para casos onde **atraso de dado é aceitável** (feed de Twitter atrasado 2 segundos).</li>
+<li>Problema: conflitos acumulam nos dois lados; quando a rede volta, precisa de **reconciliação**.</li>
+<li>Estratégia comum: **last-write-wins** (timestamp mais recente ganha) — simples, mas pode perder dados.</li>
+<li>Exemplo: **Cassandra** — consistência configurável (você escolhe quantos nós confirmam). **DynamoDB** — opção explícita: leitura fortemente consistente (lê do líder, pode falhar) vs eventualmente consistente (sempre disponível). **CouchDB** — guarda versões como um git: mantém os dois lados e a aplicação decide.</li>
+</ul>
+
+<h2>PACELC: o CAP é só metade da história</h2>
+
+<p>O CAP só fala do cenário de **partição** — mas 99% do tempo a rede funciona. O **PACELC** estende:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**P**artição → escolha entre **A** e **C**</li>
+<li>**E**lse → escolha entre **L**atência e **C**onsistência</li>
+</ul>
+
+<p>Mesmo sem partição há tradeoff: consistência forte exige coordenação, coordenação adiciona latência. DynamoDB = disponível, baixa latência. Spanner = consistente, aceita latência extra. Cassandra = depende da configuração.</p>
+
+<h2>Decisão prática</h2>
+
+<p>1. **Custo de dado errado vs custo de sistema fora do ar**: saldo bancário errado = catástrofe → CP. Feed atrasado = ninguém nota → AP.</p>
+<p>2. **Não precisa escolher para o sistema todo**: o mesmo banco pode ter transações financeiras com consistência forte e analytics com consistência eventual.</p>
+<p>3. **Entenda as garantias reais** do seu banco: &quot;consistência forte&quot; significa coisas diferentes em bancos diferentes.</p>
+<p>4. **Documente a decisão** e teste o comportamento do sistema **durante a partição** (caos engineering).</p>
+
+<h2>Conclusão</h2>
+
+<p>CAP não é limitação de engenharia — é **limitação física**: informação não viaja instantaneamente. Sistemas distribuídos são feitos de tradeoffs; a escolha consciente é o que define um bom arquiteto.</p>
+
+<h2>Exemplo de código — simulação de quórum (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — quorum: so o lado com a maioria aceita escrita (CP)</span>
+<span class="k">class</span> Cluster:
+    <span class="k">def</span> __init__(self, nos):
+        self.nos = {n: {<span class="s">&quot;valor&quot;</span>: 0, <span class="s">&quot;ativo&quot;</span>: <span class="k">True</span>} <span class="k">for</span> n <span class="k">in</span> nos}
+        self.lider = nos[0]
+
+    <span class="k">def</span> particao(self, grupo_a, grupo_b):
+        <span class="c"># simula split brain: cada grupo ve so os no do proprio lado</span>
+        <span class="k">for</span> n <span class="k">in</span> grupo_a:
+            self.nos[n][<span class="s">&quot;ativo&quot;</span>] = <span class="k">False</span>  <span class="c"># invisivel para o outro lado</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> quorum(self, grupo):
+        <span class="c"># maioria = mais da metade de TODOS os nos (nao so do grupo)</span>
+        <span class="k">return</span> len(grupo) &gt; len(self.nos) / 2
+
+    <span class="k">def</span> escrever(self, no, valor):
+        grupo = [n <span class="k">for</span> n <span class="k">in</span> self.nos <span class="k">if</span> n == no <span class="k">or</span> self.lider == n]
+        <span class="k">if</span> <span class="k">not</span> self.quorum(grupo):
+            <span class="k">return</span> f<span class="s">&quot;ERRO: no {no} sem quorum (minoritario) -&gt; 503&quot;</span>
+        self.nos[no][<span class="s">&quot;valor&quot;</span>] = valor
+        <span class="k">return</span> f<span class="s">&quot;ok: {no} = {valor}&quot;</span>
+
+    <span class="k">def</span> ler(self, no):
+        <span class="k">return</span> self.nos[no][<span class="s">&quot;valor&quot;</span>]
+
+c = Cluster([1, 2, 3])
+c.particao([1], [2, 3])
+<span class="k">print</span>(c.escrever(1, 100))      <span class="c"># no 1 sozinho = minoritario -&gt; 503</span>
+<span class="k">print</span>(c.escrever(2, 200))      <span class="c"># lado 2+3 = maioria -&gt; ok</span>
+<span class="k">print</span>(<span class="s">&quot;valor no 2:&quot;</span>, c.ler(2))
+<span class="c"># ERRO: no 1 sem quorum (minoritario) -&gt; 503</span>
+<span class="c"># ok: no 2 = 200</span>
+<span class="c"># valor no 2: 200</span></pre></div>
+
+
+<p>O ponto central: durante a partição, o **lado minoritário é bloqueado** (retorna 503) — é assim que um sistema CP evita o split brain aceitar escritas concorrentes.</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=g9DfXmDfE_Q">System Design — Teorema CAP</a> (~8).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

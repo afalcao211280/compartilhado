@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — 10 conceitos essenciais de backend</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #161a22;
+    --border: #262d3a;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #79c0ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+  .meta { color: var(--text-dim); font-size: 0.9rem; }
+  .meta a { color: var(--accent-2); text-decoration: none; }
+  .intro {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h2 .num { color: var(--accent-2); margin-right: 0.5rem; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; color: #fff; }
+  p, li { color: var(--text); }
+  ul, ol { padding-left: 1.4rem; margin: 0.4rem 0 0.9rem; }
+  li { margin: 0.25rem 0; }
+  strong { color: #fff; }
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.9rem 0;
+    font-size: 0.95rem;
+  }
+  .ex .lbl { color: var(--accent-2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .warn { border-left: 4px solid var(--warn); }
+  .warn .lbl { color: var(--warn); }
+  .ok { border-left: 4px solid var(--ok); }
+  .ok .lbl { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+  th { background: var(--surface); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .combo { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .combo strong { color: var(--ok); }
+  /* ===== Blocos de código (Java 26 / Go 1.26 / Python 3.14) ===== */
+  .code2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 2rem;
+  }
+  @media (max-width: 1100px) {
+    .code2col { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .code2col { grid-template-columns: 1fr; }
+  }
+  pre.src {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  pre.src b { color: var(--accent-2); font-weight: 700; display: block; margin-bottom: 0.5rem; }
+  pre.src .k { color: #ff7b72; }   /* keyword */
+  pre.src .t { color: #79c0ff; }   /* type */
+  pre.src .s { color: #a5d6ff; }   /* string */
+  pre.src .c { color: #8b949e; font-style: italic; } /* comment */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>10 conceitos essenciais de backend</h1>
+  <div class="meta">Resumo em pt-BR · vídeo ~12:11 · <a href="https://www.youtube.com/watch?v=P641CIXP2tY">ver no YouTube</a> · 30/08/2026</div>
+</header>
+
+<div class="intro">
+  Você clica em "entrar"; em menos de 1 s o sistema valida a requisição, checa a senha, cria sessão, consulta o banco, escreve logs e devolve a resposta. Por trás do clique existe um backend inteiro tomando decisões — e <strong>quase todo backend profissional se apoia nas mesmas 10 ideias</strong>, independente da linguagem ou framework. O vídeo conta do 10 ao 1: do básico (requisição/resposta) ao que amarra tudo (observabilidade).
+</div>
+
+<h2><span class="num">10.</span>Requisição e resposta</h2>
+<p>Todo backend começa com uma mensagem chegando: um app pede algo, o servidor processa, uma resposta volta. Requisição e resposta são o <strong>"idioma básico"</strong> do backend.</p>
+<div class="ex">
+  <span class="lbl">Requisição</span><br>
+  <strong>Método</strong>: GET (buscar) · POST (criar) · PUT (atualizar) · DELETE (remover)<br>
+  <strong>Rota</strong>: ex. <code>/api/orders</code> · <strong>Headers</strong>: metadados (token, idioma, tipo de conteúdo) · <strong>Body</strong>: corpo da mensagem
+</div>
+<div class="ex warn">
+  <span class="lbl">Status da resposta</span><br>
+  <strong>200</strong> deu certo · <strong>401</strong> faltou autenticação · <strong>404</strong> não encontrado · <strong>500</strong> quebrou no servidor
+</div>
+
+<h2><span class="num">9.</span>Contrato de API</h2>
+<p>A API é um <strong>contrato entre quem pede e quem responde</strong>.</p>
+<ul>
+  <li>O frontend <strong>não deveria precisar saber</strong> como a tabela do banco foi montada nem qual framework o servidor usa — só qual rota chamar, quais dados mandar e qual resposta esperar</li>
+  <li>É o contrato que permite o backend <strong>mudar internamente sem quebrar clientes</strong>: trocar o banco, dividir o serviço, mudar regra — contrato estável = cliente continua funcionando</li>
+  <li>Contrato bem feito: deixa claro o que entra, o que sai e <strong>como o sistema se comporta quando algo dá errado</strong></li>
+</ul>
+
+<h2><span class="num">8.</span>Validação e regra de negócio</h2>
+<div class="ex warn">
+  <span class="lbl">Regra de ouro</span><br>
+  <strong>O backend nunca pode confiar no que está vindo.</strong> Quantidade negativa → não passa · e-mail que não é e-mail → não passa · preço vindo do cliente → o backend <strong>ignora e recalcula</strong>.
+</div>
+<p><strong>Organizar em camadas</strong> (não espalhar a regra crítica): <strong>Controller</strong> entende de HTTP · <strong>Service</strong> entende de regra de negócio · <strong>Banco</strong> guarda dados. Regra espalhada → o sistema começa a se contradizer.</p>
+
+<h2><span class="num">7.</span>Autenticação e autorização</h2>
+<p>Duas coisas diferentes: <strong>Autenticação</strong> = quem é você (login) · <strong>Autorização</strong> = o que você pode fazer (permissão). Você pode estar logado e <strong>mesmo assim não ter permissão</strong> para pagar um usuário. Muita falha de segurança nasce quando o sistema não trata diferente o login da permissão.</p>
+<p>O backend recebe uma credencial (cookie de sessão, JWT...) e verifica: veio de alguém conhecido? Essa pessoa tem permissão para acessar o recurso?</p>
+
+<h2><span class="num">6.</span>Banco de dados e modelagem</h2>
+<p>Guardar o dado é <strong>decidir como o mundo real vira estrutura no backend</strong> (ex.: pedido tem usuário, itens, pagamento, endereço, status).</p>
+<ul>
+  <li>Modelagem ruim → regra confusa · <strong>normalizar demais</strong> → toda consulta vira vários JOINs</li>
+  <li>Banco também é <strong>performance</strong>: query simples pode virar full scan gigante, ou usar <strong>índice</strong> e achar o dado em poucos passos</li>
+  <li>Algo lento → a primeira coisa a olhar: consulta ruim? índice faltando? tabelas organizadas de um jeito que obriga o banco a ler de vários lugares?</li>
+</ul>
+
+<h2><span class="num">5.</span>Transações e consistência</h2>
+<div class="ex">
+  <span class="lbl">Transferência</span><br>
+  Tirar R$ 100 de uma conta (op 1) + adicionar R$ 100 em outra (op 2) — <strong>pro sistema precisa ser uma coisa só</strong>: ou as duas acontecem, ou nenhuma.
+</div>
+<ul>
+  <li><strong>Transação</strong> cria isolamento: tudo dentro dela confirma ou dá errado junto (rede, bug, processo caindo não deixam estado impossível)</li>
+  <li><strong>Concorrência</strong>: duas pessoas compram o último produto ao mesmo tempo — ambas leem estoque = 1, ambas confirmam. Sem proteção da parte crítica, <strong>vende mais do que tem</strong>. Transação impede dados reais errados</li>
+  <li>Consistência tem <strong>tradeoff de tempo</strong> — e quando o tempo vira problema, entra o cache</li>
+</ul>
+
+<h2><span class="num">4.</span>Cache</h2>
+<p>Cache = guardar uma resposta <strong>perto de onde vai ser usada de novo</strong>, para não calcular tudo ou consultar o banco toda vez. <strong>Cache hit</strong> → resposta rápida · <strong>Cache miss</strong> → busca a original, guarda cópia, usa nas próximas.</p>
+<div class="ex warn">
+  <span class="lbl">Problema</span><br>
+  Se o dado muda, a cópia fica <strong>velha</strong> — e dado velho gera problema dependendo do domínio. Backend bem feito não usa cache só porque é rápido: <strong>sabe como e quando invalidar</strong> (TTL, invalidação por evento...).
+</div>
+
+<h2><span class="num">3.</span>Filas e workers</h2>
+<p>Nem tudo precisa acontecer enquanto o usuário espera. Checkout responde rápido; <strong>mandar e-mail, gerar nota fiscal</strong> são jobs que não travam a resposta principal.</p>
+<ul>
+  <li><strong>Fila</strong> separa o pedido do processamento pesado: a API coloca uma mensagem, o <strong>worker</strong> pega depois</li>
+  <li>Muitos jobs → fila cresce · precisa processar mais rápido → <strong>sobem mais workers</strong></li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Novos problemas</span><br>
+  E se o job falhar? E se processar duas vezes? E se a fila crescer mais rápido que os workers consomem? → pensar em <strong>retry, idempotência, ordem e monitoramento</strong>.
+</div>
+
+<h2><span class="num">2.</span>Escala e disponibilidade</h2>
+<p><strong>Escala</strong> = continuar respondendo quando o volume aumenta. <strong>Disponibilidade</strong> = continuar rodando mesmo com falhas.</p>
+<div class="ex">
+  <span class="lbl">Dois caminhos</span><br>
+  <strong>Vertical</strong>: máquina mais potente (mais CPU/memória na mesma instância) · <strong>Horizontal</strong>: mais máquinas dividindo o tráfego (o mais usado hoje) — mas exige estratégia.
+</div>
+<p><strong>Stateless</strong>: se cada servidor guarda informação só na própria memória, o usuário cai em outra instância e perde contexto (sessão da máquina A não existe na B; job em andamento some). Backends grandes são <strong>stateless</strong>: estado importante vai para lugares <strong>compartilhados</strong> (Redis, cache, fila, serviço externo) — qualquer instância responde.</p>
+<p>Disponibilidade depende de saber quais partes estão saudáveis: <strong>load balancer</strong> (não mandar tráfego pra instância travada), <strong>deploy gradual</strong>, <strong>rollback</strong>, <strong>redundância</strong>.</p>
+
+<h2><span class="num">1.</span>Observabilidade (o que amarra tudo)</h2>
+<p>Capacidade de entender o que acontece <strong>dentro</strong> do sistema, coletando sinais que ele emite. Quando quebrar, você precisa saber mais do que "tá dando erro": <strong>qual rota falhou, qual horário, com qual usuário, depois de qual deploy, em qual parte ficou lento</strong>.</p>
+<table>
+  <tr><th>Sinal</th><th>Responde</th></tr>
+  <tr><td><strong>Logs</strong></td><td>O que aconteceu (requisição feita, validação falhou, pagamento recusado, worker processou job)</td></tr>
+  <tr><td><strong>Métricas</strong></td><td>Se o problema está crescendo (taxa de erro, latência, CPU, tamanho da fila, req/min)</td></tr>
+  <tr><td><strong>Traces</strong></td><td>Onde o tempo está sendo gasto (API → auth → service → cache → banco; se o banco gastou 800 ms, o trace mostra)</td></tr>
+</table>
+<p>Exemplos: depois de um deploy, ver se a taxa de erro subiu; fila acumulando jobs, perceber antes do usuário; query lenta, achar qual rota chama e em quais condições.</p>
+<div class="ex ok">
+  <span class="lbl">Conclusão do vídeo</span><br>
+  Observabilidade <strong>não substitui</strong> banco, cache, fila, autenticação — amarra todos os conceitos. <strong>Sem ela, você até constrói um backend, mas não consegue mantê-lo com confiança.</strong>
+</div>
+
+<h2>Exemplos de código — Java 26, Go 1.26 e Python 3.14</h2>
+<p>3 conceitos com implementações reais (stdlib pura), todas validadas executando: transação nunca vende 2× o último item; cache expira via TTL; validação em camadas retorna 422/201.</p>
+
+<h3>Validação em camadas (controller → service)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Validacao em camadas</b>
+<span class="k">import</span> java.util.Map;
+
+<span class="k">record</span> <span class="t">PedidoDTO</span>(<span class="t">String</span> produtoId,
+    <span class="t">int</span> quantidade, <span class="t">double</span> precoCliente,
+    <span class="t">String</span> email) {}
+<span class="k">record</span> <span class="t">Resultado</span>(<span class="t">String</span> corpo,
+    <span class="t">int</span> status) {}
+
+<span class="k">final class</span> <span class="t">PedidoService</span> {
+    <span class="c">// Regra: preco do catalogo,</span>
+    <span class="c">// nao o preco do cliente</span>
+    <span class="t">PedidoDTO</span> criar(<span class="t">PedidoDTO</span> dto) {
+        <span class="t">double</span> precoReal =
+            catalogo(dto.produtoId());
+        <span class="t">double</span> total =
+            dto.quantidade() * precoReal;
+        <span class="k">return</span> <span class="k">new</span> <span class="t">PedidoDTO</span>(
+            dto.produtoId(),
+            dto.quantidade(), total,
+            dto.email());
+    }
+
+    <span class="k">private double</span> catalogo(<span class="t">String</span> id) {
+        <span class="k">return</span> <span class="t">Map</span>.of(<span class="s">"p1"</span>, 99.90,
+            <span class="s">"p2"</span>, 19.90)
+            .getOrDefault(id, 0.0);
+    }
+}
+
+<span class="k">final class</span> <span class="t">PedidoController</span> {
+    <span class="k">private final</span> <span class="t">PedidoService</span> service;
+
+    <span class="t">PedidoController</span>(<span class="t">PedidoService</span> service) {
+        <span class="k">this</span>.service = service;
+    }
+
+    <span class="c">// Entrada: valida, delega a regra</span>
+    <span class="t">Resultado</span> post(<span class="t">PedidoDTO</span> dto) {
+        <span class="k">if</span> (dto.quantidade() &lt;= 0)
+            <span class="k">return</span> <span class="k">new</span> <span class="t">Resultado</span>(
+                <span class="s">"{\"erro\":\"qtd invalida\"}"</span>,
+                422);
+        <span class="k">if</span> (!dto.email().contains(<span class="s">"@"</span>))
+            <span class="k">return</span> <span class="k">new</span> <span class="t">Resultado</span>(
+                <span class="s">"{\"erro\":\"email invalido\"}"</span>,
+                422);
+
+        <span class="t">PedidoDTO</span> pedido =
+            service.criar(dto);
+        <span class="k">return</span> <span class="k">new</span> <span class="t">Resultado</span>(
+            <span class="s">"{\"total\":"</span>
+            + pedido.precoCliente()
+            + <span class="s">"}"</span>, 201);
+    }
+}
+
+<span class="k">public class</span> <span class="t">ValidacaoDemo</span> {
+    <span class="k">public static void</span> main(
+        <span class="t">String</span>[] args) {
+        <span class="k">var</span> controller =
+            <span class="k">new</span> <span class="t">PedidoController</span>(
+                <span class="k">new</span> <span class="t">PedidoService</span>());
+
+        <span class="c">// quantidade negativa -&gt; 422</span>
+        System.out.println(controller.post(
+            <span class="k">new</span> <span class="t">PedidoDTO</span>(<span class="s">"p1"</span>, -1,
+                1.0, <span class="s">"a@x.com"</span>)));
+        <span class="c">// preco do cliente ignorado</span>
+        <span class="c">// (99.90 * 2 = 199.80)</span>
+        System.out.println(controller.post(
+            <span class="k">new</span> <span class="t">PedidoDTO</span>(<span class="s">"p1"</span>, 2,
+                1.0, <span class="s">"a@x.com"</span>)));
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — Validacao em camadas</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"errors"</span>
+    <span class="s">"fmt"</span>
+)
+
+<span class="k">type</span> <span class="t">PedidoDTO</span> <span class="k">struct</span> {
+    ProdutoID    <span class="t">string</span>
+    Quantidade   <span class="t">int</span>
+    PrecoCliente <span class="t">float64</span>
+    Email        <span class="t">string</span>
+}
+
+<span class="c">// Camada 1: controller — HTTP + validacao</span>
+<span class="k">type</span> <span class="t">PedidoController</span> <span class="k">struct</span> {
+    service *<span class="t">PedidoService</span>
+}
+
+<span class="k">func</span> (c *<span class="t">PedidoController</span>) Post(
+    dto <span class="t">PedidoDTO</span>) (<span class="t">string</span>, <span class="t">int</span>) {
+    <span class="k">if</span> dto.Quantidade &lt;= 0 {
+        <span class="k">return</span> <span class="s">`{"erro":"qtd invalida"}`</span>,
+            422
+    }
+    <span class="k">if</span> !containsAt(dto.Email) {
+        <span class="k">return</span> <span class="s">`{"erro":"email invalido"}`</span>,
+            422
+    }
+
+    <span class="c">// Camada 2: service — regra de negocio</span>
+    total, err := c.service.Criar(dto)
+    <span class="k">if</span> err != <span class="k">nil</span> {
+        <span class="k">return</span> fmt.Sprintf(
+            <span class="s">`{"erro":"%v"}`</span>, err), 422
+    }
+    <span class="k">return</span> fmt.Sprintf(
+        <span class="s">`{"total":%.2f}`</span>, total), 201
+}
+
+<span class="k">type</span> <span class="t">PedidoService</span> <span class="k">struct</span>{}
+
+<span class="k">func</span> (s *<span class="t">PedidoService</span>) Criar(
+    dto <span class="t">PedidoDTO</span>) (<span class="t">float64</span>, <span class="t">error</span>) {
+    precoReal, ok := catalogo[dto.ProdutoID]
+    <span class="k">if</span> !ok {
+        <span class="k">return</span> 0,
+            errors.New(<span class="s">"produto nao encontrado"</span>)
+    }
+    <span class="c">// O preco que importa e o do backend</span>
+    <span class="k">return</span> precoReal *
+        <span class="t">float64</span>(dto.Quantidade), nil
+}
+
+<span class="k">var</span> catalogo = <span class="k">map</span>[<span class="t">string</span>]<span class="t">float64</span>{
+    <span class="s">"p1"</span>: 99.90, <span class="s">"p2"</span>: 19.90}
+
+<span class="k">func</span> containsAt(s <span class="t">string</span>) <span class="t">bool</span> {
+    <span class="k">for</span> _, r := <span class="k">range</span> s {
+        <span class="k">if</span> r == <span class="s">'@'</span> {
+            <span class="k">return</span> <span class="k">true</span>
+        }
+    }
+    <span class="k">return</span> <span class="k">false</span>
+}
+
+<span class="k">func</span> main() {
+    c := <span class="t">PedidoController</span>{
+        service: &amp;<span class="t">PedidoService</span>{}}
+
+    <span class="c">// quantidade negativa -&gt; 422</span>
+    fmt.Println(c.Post(<span class="t">PedidoDTO</span>{
+        ProdutoID: <span class="s">"p1"</span>,
+        Quantidade: -1,
+        Email: <span class="s">"a@x.com"</span>,
+        PrecoCliente: 1.0}))
+    <span class="c">// preco do cliente ignorado</span>
+    <span class="c">// (99.90 * 2 = 199.80)</span>
+    fmt.Println(c.Post(<span class="t">PedidoDTO</span>{
+        ProdutoID: <span class="s">"p1"</span>,
+        Quantidade: 2,
+        Email: <span class="s">"a@x.com"</span>,
+        PrecoCliente: 1.0}))
+}
+</pre>
+<pre class="src"><b># Python 3.14 — Validacao em camadas</b>
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">from</span> typing <span class="k">import</span> Protocol
+
+
+<span class="c"># Camada 1: controller — HTTP + validacao</span>
+<span class="k">@dataclass</span>(frozen=True)
+<span class="k">class</span> <span class="t">PedidoDTO</span>:
+    produto_id: str
+    quantidade: int
+    preco: float  <span class="c"># backend recalcula</span>
+
+
+<span class="k">class</span> <span class="t">PedidoService</span>(Protocol):
+    <span class="k">def</span> criar_pedido(
+        self, produto_id: str,
+        quantidade: int,
+        preco_cliente: float) -&gt; dict: ...
+
+
+<span class="k">class</span> <span class="t">PedidoController</span>:
+    <span class="k">def</span> __init__(
+        self, service: <span class="t">PedidoService</span>
+    ) -&gt; <span class="t">None</span>:
+        self._service = service
+
+    <span class="k">def</span> post(self, body: dict
+    ) -&gt; tuple[dict, int]:
+        <span class="c"># Nunca confiar no que veio</span>
+        qtd = body.get(<span class="s">"quantidade"</span>, 0)
+        <span class="k">if</span> qtd &lt;= 0:
+            <span class="k">return</span> {<span class="s">"erro"</span>:
+                <span class="s">"quantidade invalida"</span>}, 422
+        <span class="k">if</span> <span class="s">"@"</span> <span class="k">not</span> <span class="k">in</span> body.get(
+            <span class="s">"email"</span>, <span class="s">""</span>):
+            <span class="k">return</span> {<span class="s">"erro"</span>:
+                <span class="s">"email invalido"</span>}, 422
+
+        <span class="c"># Regra de negocio no service</span>
+        pedido = self._service.criar_pedido(
+            body[<span class="s">"produto_id"</span>], qtd,
+            body.get(<span class="s">"preco"</span>, 0.0))
+        <span class="k">return</span> pedido, 201
+
+
+<span class="c"># Camada 2: service — regra de negocio</span>
+<span class="k">class</span> <span class="t">PedidoServiceImpl</span>:
+    <span class="k">def</span> criar_pedido(
+        self, produto_id: str,
+        quantidade: int,
+        preco_cliente: float) -&gt; dict:
+        <span class="c"># Preco do backend, nao do cliente</span>
+        preco_real = self._preco_catalogo(
+            produto_id)
+        total = quantidade * preco_real
+        <span class="k">return</span> {<span class="s">"pedido"</span>: produto_id,
+            <span class="s">"total"</span>: round(total, 2)}
+
+    <span class="k">def</span> _preco_catalogo(
+        self, produto_id: str) -&gt; float:
+        <span class="k">return</span> {<span class="s">"p1"</span>: 99.90,
+            <span class="s">"p2"</span>: 19.90}.get(
+            produto_id, 0.0)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    controller = <span class="t">PedidoController</span>(
+        <span class="t">PedidoServiceImpl</span>())
+
+    <span class="c"># quantidade negativa -&gt; 422</span>
+    print(controller.post({
+        <span class="s">"produto_id"</span>: <span class="s">"p1"</span>,
+        <span class="s">"quantidade"</span>: -1,
+        <span class="s">"email"</span>: <span class="s">"a@x.com"</span>,
+        <span class="s">"preco"</span>: 1.0}))
+    <span class="c"># preco do cliente ignorado</span>
+    print(controller.post({
+        <span class="s">"produto_id"</span>: <span class="s">"p1"</span>,
+        <span class="s">"quantidade"</span>: 2,
+        <span class="s">"email"</span>: <span class="s">"a@x.com"</span>,
+        <span class="s">"preco"</span>: 1.0}))
+</pre>
+</div>
+
+<h3>Transação e concorrência (sem oversell)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Transacao sem oversell</b>
+<span class="k">import</span> java.util.concurrent.locks.ReentrantLock;
+
+<span class="k">final class</span> <span class="t">Inventory</span> {
+    <span class="k">private int</span> stock;
+    <span class="k">private final</span> <span class="t">ReentrantLock</span> lock =
+        <span class="k">new</span> <span class="t">ReentrantLock</span>();
+
+    <span class="t">Inventory</span>(<span class="t">int</span> stock) {
+        <span class="k">this</span>.stock = stock;
+    }
+
+    <span class="c">// "Transacao": verifica + decrementa</span>
+    <span class="c">// de forma atomica</span>
+    <span class="t">boolean</span> tryBuy(<span class="t">int</span> qty) {
+        lock.lock();
+        <span class="k">try</span> {
+            <span class="k">if</span> (stock &lt; qty)
+                <span class="k">return</span> <span class="k">false</span>; <span class="c">// sem estoque</span>
+            stock -= qty; <span class="c">// confirma</span>
+            <span class="k">return</span> <span class="k">true</span>;
+        } <span class="k">finally</span> {
+            lock.unlock();
+        }
+    }
+
+    <span class="t">int</span> remaining() {
+        lock.lock();
+        <span class="k">try</span> {
+            <span class="k">return</span> stock;
+        } <span class="k">finally</span> {
+            lock.unlock();
+        }
+    }
+}
+
+<span class="k">public class</span> <span class="t">TransacaoDemo</span> {
+    <span class="k">public static void</span> main(
+        <span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">var</span> inv = <span class="k">new</span> <span class="t">Inventory</span>(1);
+
+        <span class="c">// 2 compradores simultaneos</span>
+        <span class="k">var</span> t1 = <span class="t">Thread</span>.ofPlatform().start(
+            () -&gt; System.out.println(
+                <span class="s">"comprador A: "</span>
+                + (inv.tryBuy(1) ? <span class="s">"comprou"</span>
+                    : <span class="s">"sem estoque"</span>)));
+        <span class="k">var</span> t2 = <span class="t">Thread</span>.ofPlatform().start(
+            () -&gt; System.out.println(
+                <span class="s">"comprador B: "</span>
+                + (inv.tryBuy(1) ? <span class="s">"comprou"</span>
+                    : <span class="s">"sem estoque"</span>)));
+        t1.join(); t2.join();
+        System.out.println(
+            <span class="s">"estoque restante: "</span>
+            + inv.remaining());
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — Transacao sem oversell</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"sync"</span>
+)
+
+<span class="k">type</span> <span class="t">Inventory</span> <span class="k">struct</span> {
+    mu    sync.Mutex
+    stock <span class="t">int</span>
+}
+
+<span class="k">func</span> NewInventory(stock <span class="t">int</span>) *<span class="t">Inventory</span> {
+    <span class="k">return</span> &amp;<span class="t">Inventory</span>{stock: stock}
+}
+
+<span class="c">// "Transacao": verifica + decrementa</span>
+<span class="c">// de forma atomica</span>
+<span class="k">func</span> (i *<span class="t">Inventory</span>) TryBuy(
+    qty <span class="t">int</span>) <span class="t">bool</span> {
+    i.mu.Lock()
+    <span class="k">defer</span> i.mu.Unlock()
+    <span class="k">if</span> i.stock &lt; qty {
+        <span class="k">return</span> <span class="k">false</span> <span class="c">// sem estoque</span>
+    }
+    i.stock -= qty <span class="c">// confirma</span>
+    <span class="k">return</span> <span class="k">true</span>
+}
+
+<span class="k">func</span> (i *<span class="t">Inventory</span>) Remaining() <span class="t">int</span> {
+    i.mu.Lock()
+    <span class="k">defer</span> i.mu.Unlock()
+    <span class="k">return</span> i.stock
+}
+
+<span class="k">func</span> main() {
+    inv := NewInventory(1)
+    <span class="k">var</span> wg sync.WaitGroup
+
+    <span class="c">// 2 compradores simultaneos</span>
+    <span class="k">for</span> _, nome := <span class="k">range</span> []<span class="t">string</span>{
+        <span class="s">"comprador A"</span>,
+        <span class="s">"comprador B"</span>} {
+        wg.Add(1)
+        <span class="k">go</span> <span class="k">func</span>(nome <span class="t">string</span>) {
+            <span class="k">defer</span> wg.Done()
+            <span class="k">if</span> inv.TryBuy(1) {
+                fmt.Println(nome +
+                    <span class="s">": comprou"</span>)
+            } <span class="k">else</span> {
+                fmt.Println(nome +
+                    <span class="s">": sem estoque"</span>)
+            }
+        }(nome)
+    }
+    wg.Wait()
+    fmt.Println(<span class="s">"estoque restante:"</span>,
+        inv.Remaining())
+}
+</pre>
+<pre class="src"><b># Python 3.14 — Transacao sem oversell</b>
+<span class="k">import</span> threading
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> <span class="t">Inventory</span>:
+    stock: int
+    _lock: threading.Lock = threading.Lock()
+
+    <span class="k">def</span> try_buy(self, qty: int) -&gt; bool:
+        <span class="c"># "Transacao": atomica</span>
+        <span class="k">with</span> self._lock:
+            <span class="k">if</span> self.stock &lt; qty:
+                <span class="k">return</span> <span class="k">False</span>
+            self.stock -= qty
+            <span class="k">return</span> <span class="k">True</span>
+
+    <span class="k">def</span> remaining(self) -&gt; int:
+        <span class="k">with</span> self._lock:
+            <span class="k">return</span> self.stock
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    inv = <span class="t">Inventory</span>(stock=1)
+
+    results: list[str] = []
+    threads = [
+        threading.Thread(target=<span class="k">lambda</span>:
+            results.append(<span class="s">"comprador A: "</span>
+            + (<span class="s">"comprou"</span> <span class="k">if</span>
+                inv.try_buy(1)
+                <span class="k">else</span> <span class="s">"sem estoque"</span>))),
+        threading.Thread(target=<span class="k">lambda</span>:
+            results.append(<span class="s">"comprador B: "</span>
+            + (<span class="s">"comprou"</span> <span class="k">if</span>
+                inv.try_buy(1)
+                <span class="k">else</span> <span class="s">"sem estoque"</span>))),
+    ]
+    <span class="k">for</span> t <span class="k">in</span> threads:
+        t.start()
+    <span class="k">for</span> t <span class="k">in</span> threads:
+        t.join()
+
+    <span class="k">for</span> r <span class="k">in</span> results:
+        print(r)
+    print(<span class="s">"estoque restante:"</span>,
+        inv.remaining())
+</pre>
+</div>
+
+<h3>Cache com TTL (hit/miss + invalidação)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Cache com TTL</b>
+<span class="k">import</span> java.util.Map;
+<span class="k">import</span> java.util.concurrent.ConcurrentHashMap;
+
+<span class="k">final class</span> <span class="t">TtlCache</span> {
+    <span class="k">record</span> <span class="t">Entry</span>(<span class="t">String</span> value,
+        <span class="t">long</span> expiresAt) {}
+
+    <span class="k">private final</span> <span class="t">Map</span>&lt;<span class="t">String</span>,
+        <span class="t">Entry</span>&gt; cache =
+        <span class="k">new</span> <span class="t">ConcurrentHashMap</span>&lt;&gt;();
+    <span class="k">private final long</span> ttlMs;
+
+    <span class="t">TtlCache</span>(<span class="t">long</span> ttlMs) {
+        <span class="k">this</span>.ttlMs = ttlMs;
+    }
+
+    <span class="t">String</span> get(<span class="t">String</span> key) {
+        <span class="t">Entry</span> e = cache.get(key);
+        <span class="k">if</span> (e == <span class="k">null</span>)
+            <span class="k">return</span> <span class="k">null</span>; <span class="c">// miss</span>
+        <span class="k">if</span> (System.currentTimeMillis()
+            &gt; e.expiresAt()) {
+            cache.remove(key); <span class="c">// invalida</span>
+            <span class="k">return</span> <span class="k">null</span>;
+        }
+        <span class="k">return</span> e.value(); <span class="c">// hit</span>
+    }
+
+    <span class="t">void</span> put(<span class="t">String</span> key,
+        <span class="t">String</span> value) {
+        cache.put(key, <span class="k">new</span> <span class="t">Entry</span>(value,
+            System.currentTimeMillis()
+            + ttlMs));
+    }
+
+    <span class="t">int</span> size() {
+        <span class="k">return</span> cache.size();
+    }
+}
+
+<span class="k">public class</span> <span class="t">CacheDemo</span> {
+    <span class="k">public static void</span> main(
+        <span class="t">String</span>[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="k">var</span> cache =
+            <span class="k">new</span> <span class="t">TtlCache</span>(100);
+
+        cache.put(<span class="s">"produto:42"</span>,
+            <span class="s">"{\"nome\":\"Teclado\"}"</span>);
+
+        System.out.println(<span class="s">"hit: "</span>
+            + cache.get(<span class="s">"produto:42"</span>));
+        <span class="t">Thread</span>.sleep(150);
+        System.out.println(
+            <span class="s">"apos TTL (miss): "</span>
+            + cache.get(<span class="s">"produto:42"</span>));
+        System.out.println(<span class="s">"tamanho: "</span>
+            + cache.size());
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — Cache com TTL</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"sync"</span>
+    <span class="s">"time"</span>
+)
+
+<span class="k">type</span> <span class="t">Cache</span> <span class="k">struct</span> {
+    mu    sync.RWMutex
+    items <span class="k">map</span>[<span class="t">string</span>]<span class="t">item</span>
+    ttl   time.Duration
+}
+
+<span class="k">type</span> <span class="t">item</span> <span class="k">struct</span> {
+    value     <span class="t">string</span>
+    expiresAt time.Time
+}
+
+<span class="k">func</span> NewCache(ttl time.Duration) *<span class="t">Cache</span> {
+    <span class="k">return</span> &amp;<span class="t">Cache</span>{
+        items: <span class="k">make</span>(<span class="k">map</span>[<span class="t">string</span>]<span class="t">item</span>),
+        ttl:   ttl}
+}
+
+<span class="k">func</span> (c *<span class="t">Cache</span>) Get(key <span class="t">string</span>) (<span class="t">string</span>, <span class="t">bool</span>) {
+    c.mu.RLock()
+    <span class="k">defer</span> c.mu.RUnlock()
+    it, ok := c.items[key]
+    <span class="k">if</span> !ok {
+        <span class="k">return</span> <span class="s">""</span>, <span class="k">false</span> <span class="c">// miss</span>
+    }
+    <span class="k">if</span> time.Now().After(it.expiresAt) {
+        <span class="k">delete</span>(c.items, key) <span class="c">// invalida</span>
+        <span class="k">return</span> <span class="s">""</span>, <span class="k">false</span>
+    }
+    <span class="k">return</span> it.value, <span class="k">true</span> <span class="c">// hit</span>
+}
+
+<span class="k">func</span> (c *<span class="t">Cache</span>) Put(key, value <span class="t">string</span>) {
+    c.mu.Lock()
+    <span class="k">defer</span> c.mu.Unlock()
+    c.items[key] = <span class="t">item</span>{
+        value: value,
+        expiresAt: time.Now().Add(c.ttl)}
+}
+
+<span class="k">func</span> main() {
+    cache := NewCache(100 * time.Millisecond)
+    cache.Put(<span class="s">"produto:42"</span>,
+        <span class="s">`{"nome":"Teclado"}`</span>)
+
+    v, hit := cache.Get(<span class="s">"produto:42"</span>)
+    fmt.Println(<span class="s">"hit:"</span>, hit, v)
+    time.Sleep(150 * time.Millisecond)
+    v, hit = cache.Get(<span class="s">"produto:42"</span>)
+    fmt.Println(<span class="s">"apos TTL (miss):"</span>,
+        hit, v)
+    fmt.Println(<span class="s">"tamanho:"</span>,
+        len(cache.items))
+}
+</pre>
+<pre class="src"><b># Python 3.14 — Cache com TTL</b>
+<span class="k">import</span> threading
+<span class="k">import</span> time
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> <span class="t">Item</span>:
+    value: str
+    expires_at: float
+
+
+<span class="k">class</span> <span class="t">TtlCache</span>:
+    <span class="k">def</span> __init__(self, ttl_ms: int) -&gt; <span class="t">None</span>:
+        self._ttl_s = ttl_ms / 1000
+        self._items: dict[str, <span class="t">Item</span>] = {}
+        self._lock = threading.Lock()
+
+    <span class="k">def</span> get(self, key: str) -&gt; str | <span class="t">None</span>:
+        <span class="k">with</span> self._lock:
+            it = self._items.get(key)
+            <span class="k">if</span> it <span class="k">is</span> <span class="t">None</span>:
+                <span class="k">return</span> <span class="t">None</span> <span class="c"># miss</span>
+            <span class="k">if</span> time.monotonic() &gt; it.expires_at:
+                <span class="k">del</span> self._items[key] <span class="c"># invalida</span>
+                <span class="k">return</span> <span class="t">None</span>
+            <span class="k">return</span> it.value <span class="c"># hit</span>
+
+    <span class="k">def</span> put(self, key: str,
+            value: str) -&gt; <span class="t">None</span>:
+        <span class="k">with</span> self._lock:
+            self._items[key] = <span class="t">Item</span>(
+                value, time.monotonic()
+                + self._ttl_s)
+
+    <span class="k">def</span> size(self) -&gt; int:
+        <span class="k">with</span> self._lock:
+            <span class="k">return</span> len(self._items)
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    cache = <span class="t">TtlCache</span>(ttl_ms=100)
+    cache.put(<span class="s">"produto:42"</span>,
+        <span class="s">'{"nome":"Teclado"}'</span>)
+
+    print(<span class="s">"hit:"</span>, cache.get(<span class="s">"produto:42"</span>))
+    time.sleep(0.15)
+    print(<span class="s">"apos TTL (miss):"</span>,
+        cache.get(<span class="s">"produto:42"</span>))
+    print(<span class="s">"tamanho:"</span>, cache.size())
+</pre>
+</div>
+
+<h2>Mapa mental — os 10 em uma linha</h2>
+<div class="combo">
+  <strong>1.</strong> Requisição/resposta — o idioma básico · <strong>2.</strong> Contrato de API — combinam o formato · <strong>3.</strong> Validação + regra — nunca confiar no cliente; camadas · <strong>4.</strong> AuthN + AuthZ — quem é você ≠ o que pode fazer · <strong>5.</strong> Banco + modelagem — índices = performance · <strong>6.</strong> Transações + consistência — ou tudo ou nada · <strong>7.</strong> Cache — saber invalidar (TTL) · <strong>8.</strong> Filas + workers — retry/idempotência/ordem · <strong>9.</strong> Escala + disponibilidade — stateless com estado compartilhado · <strong>10.</strong> Observabilidade — logs (o quê), métricas (crescimento), traces (onde gasta tempo)
+</div>
+
+<footer>
+  Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=P641CIXP2tY">10 conceitos essenciais de backend</a> (pt-BR, ~12:11). Código validado: OpenJDK 26.0.2.1, Go 1.26.6, Python 3.14.7. Transação testada 8x — nunca vendeu 2× o último item.
+</footer>
+
+</div>
+</body>
+</html>

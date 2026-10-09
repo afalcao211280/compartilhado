@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Replicação e Sharding</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Design — Replicação e Sharding</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=czMY_ATOej0">https://www.youtube.com/watch?v=czMY_ATOej0</a> · pt-BR · ~7 · 30/08/2026</p>
+
+<h1>Resumo — &quot;System Design: Replicação e Sharding&quot; (pt-BR, ~7:21)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=czMY_ATOej0</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_sd5.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; A aplicação escala fácil (stateless + load balancer), mas o **banco de dados é stateful por natureza — ele é o estado**. Toda requisição ainda bate no mesmo banco. Para escalar dados, você precisa de **replicação** (escala leitura) e **sharding** (escala escrita).</p>
+
+<h2>O problema: leitura vs escrita</h2>
+
+<p>A maioria dos sistemas tem muito mais leitura do que escrita: para cada post criado, milhares leem; para cada pedido, o usuário consulta o status várias vezes. Proporções de 10:1, 50:1, até 100:1.</p>
+
+<p>Se o banco não aguenta a leitura → queries lentas → fila → usuários esperando → experiência ruim.</p>
+
+<h2>Replicação: escala leitura</h2>
+
+<p>Fazer cópias do banco: um **primário** (escreve) + várias **réplicas** (leem).</p>
+
+<ul style='padding-left:1.3rem'>
+<li>Toda **escrita → primário**; toda **leitura → qualquer réplica**.</li>
+<li>10.000 leituras/s ÷ 3 réplicas ≈ 3.300 cada (se balanceadas).</li>
+<li>Precisa de mais leitura? **Adicione mais réplicas.**</li>
+<li>Vantagens: escala horizontal para leitura, **redundância** (se o primário cair...), réplicas em **outras regiões** (latência menor).</li>
+</ul>
+
+<h3>Síncrona vs assíncrona</h3>
+
+<ul style='padding-left:1.3rem'>
+<li>**Síncrona**: o primário só confirma a escrita depois que **todas as réplicas gravaram**. Consistente, mas **lento** — cada escrita espera a réplica mais lenta.</li>
+<li>**Assíncrona**: confirma na hora e manda para as réplicas em background. **Rápido**, mas gera **replication lag** (dados podem demorar ms ou segundos para chegar).</li>
+</ul>
+
+<p>A maioria dos sistemas usa **assíncrona** e aceita o tradeoff: consistência perfeita na leitura raramente importa mais que escrita rápida.</p>
+
+<h3>Read-your-writes</h3>
+
+<p>Problema: usuário escreve e lê logo em seguida — pode pegar dado desatualizado na réplica. Solução: por alguns segundos após a escrita, **as leituras daquele usuário vão para o primário**. O usuário sempre vê os próprios dados atualizados; os outros podem ter pequeno delay.</p>
+
+<p>⚠️ **Replicação resolve leitura, não escrita.** Toda escrita ainda vai para o mesmo primário. Se a escrita é o gargalo, réplicas não adiantam.</p>
+
+<h2>Sharding: escala escrita</h2>
+
+<p>**Sharding** = dividir os dados em pedaços menores chamados **shards**. Cada shard é um **banco independente** com uma parte dos dados.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>Em vez de 1 banco com todos os usuários → 4 bancos com 25% cada.</li>
+<li>**As escritas são distribuídas**: usuária Maria → shard 0, usuário Bruno → shard 3.</li>
+<li>Com 4 shards, cada um recebe ~25% das escritas (se distribuídas uniformemente).</li>
+<li>Precisa de mais capacidade? **Adicione mais shards.**</li>
+</ul>
+
+<h3>Como decidir onde cada dado vai?</h3>
+
+<p>1. **Range**: divide por intervalos (IDs 1–1M → shard 0, 1M–2M → shard 1). Simples, mas **perigoso**: se os dados mais acessados caem no mesmo range, um shard sobrecarrega e outros ficam ociosos.</p>
+<p>2. **Hash**: aplica função hash no ID e distribui pelo resultado (`hash(id) % N`). Distribuição **uniforme**, evita sobrecarga de um shard. **A mais comum.**</p>
+<p>3. **Directory**: tabela de lookup (qual shard guarda qual dado). Flexível, mas a tabela é um **ponto único de falha** — se cair, ninguém sabe onde estão os dados.</p>
+
+<h3>Os problemas do sharding</h3>
+
+<p>1. **Joins entre shards**: posts num shard, usuários em outro → join? **Você não faz, ou faz na aplicação** (lento). Dados consultados juntos devem ficar **no mesmo shard**.</p>
+<p>2. **Rebalanceamento**: quando um shard enche ou você adiciona mais shards → redistribuir dados. **Caro, lento, pode causar downtime.**</p>
+<p>3. **Queries globais**: contar todos os usuários = consultar **todos os shards** e somar; ordenar por data = buscar de todos e ordenar na aplicação.</p>
+<p>4. **A complexidade vaza para a aplicação**: você precisa saber qual shard consultar em todo lugar.</p>
+
+<p>&gt; **Sharding é o último recurso, nunca a primeira opção.** Muita empresa escalou a milhões de usuários com um banco bem configurado, índices certos e cache agressivo.</p>
+
+<h2>Combinação na prática</h2>
+
+<p>As duas estratégias são complementares: **cada shard tem seu primário e suas próprias réplicas** — sharding distribui a escrita, replicação distribui a leitura dentro de cada shard. Uber, Instagram e Notion usam essa combinação.</p>
+
+<p>Evolução comum: começa com 1 banco → adiciona réplicas quando a leitura pesa → adiciona shards quando a escrita não aguenta. **Cada passo adiciona complexidade — só mude quando precisar.**</p>
+
+<h2>Alternativas modernas</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**PlanetScale, Vitess** — sharding transparente para MySQL (abstraem a complexidade).</li>
+<li>**CockroachDB** e similares — bancos distribuídos que escalam horizontalmente de forma automática.</li>
+<li>Você ainda paga o custo de consistência e latência, mas **não implementa a lógica na mão**. Serviço gerenciado antes de shard próprio.</li>
+</ul>
+
+<h2>Resumo</h2>
+
+<p>| Estratégia | Escala | Quando usar |</p>
+<p>|---|---|---|</p>
+<p>| Réplicas | Leitura | Leitura é o gargalo; simples; adiciona redundância |</p>
+<p>| Sharding | Escrita | Já otimizou leitura (cache + réplicas), escrita é o gargalo comprovado |</p>
+
+<p>&gt; **A melhor requisição para o banco é a que você não faz.** Antes de replicar ou shardear, otimize queries e use cache o máximo possível.</p>
+
+<h2>Exemplo de código — hash sharding (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — sharding por hash: qual shard guarda o usuario?</span>
+N_SHARDS = 4
+
+<span class="k">def</span> shard_de(user_id):
+    <span class="k">return</span> hash(user_id) % N_SHARDS   <span class="c"># resto da divisao = shard</span>
+
+usuarios = [<span class="s">&quot;maria&quot;</span>, <span class="s">&quot;bruno&quot;</span>, <span class="s">&quot;ana&quot;</span>, <span class="s">&quot;carlos&quot;</span>, <span class="s">&quot;duda&quot;</span>, <span class="s">&quot;elias&quot;</span>, <span class="s">&quot;fabio&quot;</span>, <span class="s">&quot;gabi&quot;</span>]
+shards = {i: [] <span class="k">for</span> i <span class="k">in</span> range(N_SHARDS)}
+<span class="k">for</span> u <span class="k">in</span> usuarios:
+    shards[shard_de(u)].append(u)
+
+<span class="k">for</span> s, lista <span class="k">in</span> sorted(shards.items()):
+    <span class="k">print</span>(f<span class="s">&quot;shard {s}: {lista}&quot;</span>)
+<span class="c"># ex.: cada shard recebe ~2 usuarios (distribuicao uniforme)</span></pre></div>
+
+
+<p>A **distribuição uniforme** é o ponto: com `hash(id) % N`, usuários adjacentes caem em shards diferentes, então nenhum shard sobrecarrega. No mundo real, os dados quentes ficam espalhados — e cada shard tem seu próprio primário + réplicas.</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=czMY_ATOej0">System Design — Replicação e Sharding</a> (~7).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

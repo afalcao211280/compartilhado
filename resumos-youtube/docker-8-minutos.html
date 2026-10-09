@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — Docker Explicado em 8 Minutos</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --fg: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --accent2: #f0883e;
+    --code-bg: #0a0e14; --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6; }
+  .wrap { max-width: 100%; padding: 2rem 2.5rem; margin: 0 auto; }
+  h1 { font-size: 1.7rem; color: var(--accent); }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2rem;
+    border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.05rem; color: var(--accent2); }
+  a { color: var(--accent); }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .combo { background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .combo strong { color: var(--accent); }
+  .code2col { display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem; margin: 1rem 0; }
+  @media (max-width: 1100px) { .code2col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px)  { .code2col { grid-template-columns: 1fr; } }
+  .src { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: .9rem 1rem; overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: .82rem; line-height: 1.5; margin: 0; }
+  .k { color: #ff7b72; } .t { color: #79c0ff; } .s { color: #a5d6ff; }
+  .c { color: #8b949e; font-style: italic; }
+  footer { margin-top: 3rem; padding-top: 1rem;
+    border-top: 1px solid var(--border); color: var(--muted);
+    font-size: .85rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resumo — "Docker Explicado em 8 Minutos"</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=jftIzkXbKKY">youtube.com/watch?v=jftIzkXbKKY</a> · pt-BR · ~8:14 · 30/08/2026</p>
+  <p><strong>Tese central:</strong> "Na minha máquina funciona" — contêineres eliminam esse problema empacotando a aplicação com tudo que ela precisa, em um ambiente isolado.</p>
+
+  <h2>Pontos-chave</h2>
+  <div class="combo">
+    <p><strong>1. O problema.</strong> 3 apps no mesmo servidor compartilhavam SO, bibliotecas, diretórios. Python 2.7 vs 3.11, mesma porta 8080, dev ≠ produção.</p>
+    <p><strong>2. VM ≠ contêiner.</strong> VM = SO inteiro (karne, drivers, pacotes) → pesado, lento. Casa inteira vs quarto de hotel.</p>
+    <p><strong>3. Namespaces.</strong> Ilusão de isolamento: cada contêiner acha que é o único (PID 1, própria rede, próprio FS).</p>
+    <p><strong>4. Cgroups.</strong> Limites de CPU/memória/disco/rede. Um contêiner pesado não derruba os outros (disjuntor por apartamento).</p>
+    <p><strong>5. Dockerfile.</strong> Receita em camadas cacheadas: FROM, WORKDIR, COPY, RUN, CMD. Só o código muda → deps não reinstalam.</p>
+    <p><strong>6. Imagem vs contêiner.</strong> build = molde imutável (classe); run = instância viva (objeto).</p>
+    <p><strong>7. Compose.</strong> Vários serviços em 1 YAML; rede criada automaticamente; API acessa postgres pelo nome.</p>
+    <p><strong>8. Produção.</strong> CD → build → registry (Hub/ECR) → tags → rollback instantâneo. Imagem imutável = paridade dev/prod.</p>
+    <p><strong>+ Limitações.</strong> Segurança (kernel compartilhado), persistência (volumes), complexidade para app simples, rede difícil de debugar.</p>
+  </div>
+
+  <h2>Exemplos de código — Docker na prática</h2>
+  <p>3 exemplos (Python 3.14, Java 26, Go 1.26), validados por execução.</p>
+
+  <h3>1. Dockerfile + docker-compose.yml</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Dockerfile</span>
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["npm", "start"]</pre>
+    <pre class="src"><span class="c"># docker-compose.yml (3 servicos)</span>
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://user:pass@postgres:5432/app
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+volumes:
+  pgdata:</pre>
+    <pre class="src"><span class="c"># compose: 1 comando sobe tudo</span>
+<span class="c"># $ docker compose up</span>
+<span class="c"># - cria a rede automaticamente</span>
+<span class="c"># - api + postgres + redis</span>
+<span class="c"># - api acessa postgres pelo nome</span>
+<span class="c">#   (sem configurar IP)</span>
+<span class="c"># - volume pgdata persiste os dados</span></pre>
+  </div>
+
+  <h3>2. Camadas cacheadas — build de verdade</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Python 3.14 — cache de camadas</span>
+<span class="k">import</span> hashlib, json, os
+
+CACHE = <span class="s">'/tmp/docker_layers.json'</span>
+
+<span class="k">def</span> restore():
+    <span class="k">if</span> os.path.exists(CACHE):
+        <span class="k">return</span> json.load(
+          <span class="t">open</span>(CACHE))
+    <span class="k">return</span> {}
+
+<span class="k">def</span> build(deps, code):
+    cache = restore()
+    h = hashlib.sha256(
+      deps.encode()).hexdigest()
+    <span class="k">if</span> cache.get(
+      <span class="s">'deps_hash'</span>) == h:
+        <span class="t">print</span>(<span class="s">'deps OK (cache hit)'</span>)
+    <span class="k">else</span>:
+        <span class="t">print</span>(<span class="s">'deps mudaram — reinstall'</span>)
+        cache[<span class="s">'deps_hash'</span>] = h
+    <span class="t">print</span>(<span class="s">f'copiando {code}'</span>)
+    json.dump(cache,
+      <span class="t">open</span>(CACHE, <span class="s">'w'</span>))
+
+build(<span class="s">'express@4'</span>, <span class="s">'app v1'</span>)
+build(<span class="s">'express@4'</span>, <span class="s">'app v2'</span>)
+<span class="c"># 1o: instala deps; 2o: cache hit</span></pre>
+    <pre class="src"><span class="c">// Java 26 — camadas/cache</span>
+<span class="k">import</span> java.nio.file.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> LayersDemo {
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a)
+    <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="k">var</span> p =
+      <span class="t">Path</span>.of(<span class="s">"/tmp/layers.txt"</span>);
+    <span class="k">var</span> cache =
+      <span class="t">Files</span>.exists(p) ?
+      <span class="t">Files</span>.readString(p) :
+      <span class="s">""</span>;
+    <span class="t">String</span> deps =
+      <span class="s">"react@19"</span>;
+    <span class="k">if</span> (cache.equals(deps)) {
+      <span class="t">System</span>.out.println(
+        <span class="s">"deps OK (cache hit)"</span>);
+    } <span class="k">else</span> {
+      <span class="t">System</span>.out.println(
+        <span class="s">"deps mudaram — reinstall"</span>);
+      <span class="t">Files</span>.writeString(p, deps);
+    }
+    <span class="t">System</span>.out.println(
+      <span class="s">"copiando codigo..."</span>);
+  }
+}</pre>
+    <pre class="src"><span class="c">// Go 1.26 — camadas/cache</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"os"</span>
+)
+
+<span class="k">func</span> main() {
+    <span class="k">const</span> deps =
+      <span class="s">"express@4"</span>
+    b, _ := os.ReadFile(
+      <span class="s">"/tmp/go_layers.txt"</span>)
+    <span class="k">if</span> string(b) == deps {
+        fmt.Println(
+          <span class="s">"deps OK (cache hit)"</span>)
+    } <span class="k">else</span> {
+        fmt.Println(
+        <span class="s">"deps mudaram — reinstall"</span>)
+        os.WriteFile(
+          <span class="s">"/tmp/go_layers.txt"</span>,
+          []byte(deps), 0o644)
+    }
+    fmt.Println(
+      <span class="s">"copiando codigo..."</span>)
+}</pre>
+  </div>
+
+  <h3>3. Namespaces simulados (o "PID 1" de cada contêiner)</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Python 3.14</span>
+<span class="k">class</span> Namespace:
+    <span class="k">def</span> __init__(self, nome):
+        self.nome = nome
+        self.pid = 1
+        self.processos = []
+
+ns_web = Namespace(<span class="s">'web'</span>)
+ns_web.processos.append(
+  <span class="s">'node server.js'</span>)
+
+ns_db = Namespace(<span class="s">'db'</span>)
+ns_db.processos.append(
+  <span class="s">'postgres -D /var/lib'</span>)
+
+<span class="t">print</span>(<span class="s">f"{ns_web.nome}: acha PID "</span>
+  <span class="s">f"{ns_web.pid} (host: 2451)"</span>)
+<span class="t">print</span>(<span class="s">f"{ns_db.nome}: acha PID "</span>
+  <span class="s">f"{ns_db.pid} (host: 3120)"</span>)
+<span class="c"># ilusao de isolamento</span></pre>
+    <pre class="src"><span class="c">// Java 26</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> NamespaceDemo {
+  <span class="k">record</span> NS(<span class="t">String</span> nome,
+    <span class="t">int</span> pid,
+    <span class="t">List</span>&lt;<span class="t">String</span>&gt; procs) {}
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    <span class="k">var</span> web = <span class="k">new</span> NS(
+      <span class="s">"web"</span>, 1,
+      <span class="t">List</span>.of(
+        <span class="s">"node server.js"</span>));
+    <span class="k">var</span> db = <span class="k">new</span> NS(
+      <span class="s">"db"</span>, 1,
+      <span class="t">List</span>.of(
+        <span class="s">"postgres -D /var/lib"</span>));
+    <span class="t">System</span>.out.println(
+      web.nome() + <span class="s">": acha PID "</span>
+      + web.pid() +
+      <span class="s">" (host: 2451)"</span>);
+    <span class="t">System</span>.out.println(
+      db.nome() + <span class="s">": acha PID "</span>
+      + db.pid() +
+      <span class="s">" (host: 3120)"</span>);
+  }
+}</pre>
+    <pre class="src"><span class="c">// Go 1.26</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="k">type</span> NS <span class="k">struct</span> {
+    nome <span class="t">string</span>
+    pid  <span class="t">int</span>
+}
+
+<span class="k">func</span> main() {
+    web := NS{<span class="s">"web"</span>, 1}
+    db := NS{<span class="s">"db"</span>, 1}
+    fmt.Printf(<span class="s">"%s: acha PID %d (host: 2451)\n"</span>,
+      web.nome, web.pid)
+    fmt.Printf(<span class="s">"%s: acha PID %d (host: 3120)\n"</span>,
+      db.nome, db.pid)
+}</pre>
+  </div>
+
+  <h2>Mapa mental — os 8 em uma linha</h2>
+  <div class="combo">
+    <p><strong>1.</strong> "Na minha máquina funciona" · <strong>2.</strong> VM = SO inteiro (pesado) · <strong>3.</strong> Namespaces = ilusão de isolamento · <strong>4.</strong> Cgroups = limites de recurso · <strong>5.</strong> Dockerfile = camadas cacheadas · <strong>6.</strong> Imagem (classe) vs contêiner (objeto) · <strong>7.</strong> Compose = vários serviços em 1 comando · <strong>8.</strong> Registry + tags = rollback instantâneo.</p>
+  </div>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=jftIzkXbKKY">"Docker Explicado em 8 Minutos"</a> (pt-BR, ~8:14). Código validado: Python 3.14.7, OpenJDK 26.0.2.1, Go 1.26.6.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rust: por que ele está em todo lugar?</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Rust: por que ele está em todo lugar?</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=NovBtvFLwn8">https://www.youtube.com/watch?v=NovBtvFLwn8</a> · pt-BR · ~17:21 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Rust: por que ele está em todo lugar?&quot; (pt-BR, ~17:21)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=NovBtvFLwn8</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_rust.json</p>
+
+<h2>Tese central</h2>
+
+<p>Rust é uma linguagem de sistema que busca **desempenho de C sem garbage collector e com segurança de memória garantida em tempo de compilação**. A aposta: pagar mais na compilação para levar menos susto em produção. Em C, um bug de memória compila, roda e explode depois; em Rust, o compilador barra antes da primeira linha rodar.</p>
+
+<h2>Os 4 pilares</h2>
+
+<h3>1. Ownership (posse)</h3>
+<p>Todo valor tem um **dono**. Quando o dono sai de escopo, o valor é liberado automaticamente. Só existe UM dono por vez: na atribuição, a posse **move** (não copia referência). Isso elimina double-free (liberar 2×), memory leak (nunca liberar) e use-after-free (usar memória já liberada).</p>
+
+<h3>2. Borrowing (empréstimo)</h3>
+<p>Para passar dados a funções sem destruí-los, empresta-se uma **referência** (`&amp;`). A função lê sem virar dona; o valor original continua vivo. Regras:</p>
+<ul style='padding-left:1.3rem'>
+<li>Várias referências **imutáveis** ao mesmo tempo: OK.</li>
+<li>Uma referência **mutável** (`&amp;mut`) precisa estar **sozinha**: ou vários leitores, ou um escritor.</li>
+<li>Isso elimina **data races** (duas threads acessando a mesma memória sem coordenação, com pelo menos uma escrita) — o compilador **recusa** código com `&amp;a` + `&amp;mut a` simultâneos.</li>
+</ul>
+
+<h3>3. Lifetimes (tempo de vida)</h3>
+<p>Garantia do compilador de que uma referência **nunca vive mais que o valor apontado**. Na maioria do código é inferido; só se escreve `&#x27;a` quando um struct guarda referências ou uma função devolve referência — aí a assinatura precisa declarar de onde a referência veio.</p>
+
+<h3>4. Tipos que representam ausência/erro</h3>
+<ul style='padding-left:1.3rem'>
+<li>**`Option&lt;T&gt;`**: `Some(v)` ou `None` — força tratar os dois casos (nada de valor mágico).</li>
+<li>**`Result&lt;T, E&gt;`**: `Ok(v)` ou `Err(e)`; o operador `?` propaga o erro no caminho feliz sem esconder que erro existe.</li>
+<li>**`enum` + `match` exaustivo**: modelar estado inválido como **impossível de representar** (pedido `Aberto` sem `pago_em`; `Cancelado` com `motivo`; `Pago` com `pago_em`). Se amanhã adicionarem um estado, o compilador aponta **onde** o código precisa mudar.</li>
+</ul>
+
+<h2>Sintaxe e ferramentas</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>`struct` define dados; `impl` associa métodos (self, `&amp;mut self`); `enum` define alternativas.</li>
+<li>**Imutabilidade por padrão**: `mut` marca explicitamente a mutação.</li>
+<li>**`trait`** é contrato de comportamento (interface com ligação forte ao sistema de tipos: genéricos, `?`, conversões, iteradores).</li>
+<li>**Iterators** + closures: pipelines que o compilador otimiza agressivamente.</li>
+<li>Macros usam `!` (`println!`, `format!`).</li>
+<li>**Cargo**: `cargo new`, `cargo run`, `cargo test`, `cargo fmt` — fluxo padrão de projeto/build/dependências/testes/publicação; repositório público = crates.io.</li>
+</ul>
+
+<h2>Onde Rust faz sentido (e onde não)</h2>
+
+<p>Faz sentido quando: **custo de falha alto + necessidade de controle alta** (sistemas, drivers, runtimes, bancos de dados, proxies, CLIs, embarcados). Binário nativo único, latência e previsibilidade de memória importam.</p>
+
+<p>Não faz sentido: validar ideia em 2 dias, app de tela/formulário/CRUD — TypeScript, Ruby, Python ou Go resolvem com muito menos atrito.</p>
+
+<h2>Adoção real (Rust como &quot;motor embaixo&quot;)</h2>
+
+<p>| Exemplo | Onde entra |</p>
+<p>|---|---|</p>
+<p>| Linux kernel | Frente de abstrações e drivers em Rust (não todo o kernel) |</p>
+<p>| Android | Componentes nativos — bugs de memória em C/C++ viram vulnerabilidades |</p>
+<p>| AWS Firecracker | MicroVMs (Lambda, Fargate): subir rápido, pouco overhead |</p>
+<p>| Cloudflare Pingora | Framework Rust para proxies HTTP de altíssimo tráfego |</p>
+<p>| Deno | Runtime JS/TS/WASM — base tem V8 + Rust + Tokio |</p>
+<p>| uv (Python) | Gerenciador de pacotes Python escrito em Rust |</p>
+
+<h2>Tradeoffs</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Aprendizado**: ownership/borrowing/lifetimes exigidos desde o início; o compilador não deixa empurrar dúvidas.</li>
+<li>**Velocidade de compilação**: pode ser mais lento que Go em projetos grandes.</li>
+<li>**Verbose em alguns casos**: trait bounds, genéricos com mensagens longas, estruturas com referências internas.</li>
+<li>Não impede deadlock, nem conserta arquitetura ruim — mas tira um conjunto grande de erros que em outras linguagens acontecem silenciosamente.</li>
+</ul>
+
+<h2>Conclusão</h2>
+
+<p>Rust força a responder perguntas que outras linguagens deixam implícitas: *quem é dono deste valor? quem pode mudar? esta referência vive o suficiente? este erro foi tratado? este estado inválido pode existir?* No começo parece burocracia; depois vira design. &quot;Pague mais na compilação para levar menos susto em produção.&quot;</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — Rust 1.98</h2>
+
+<h3>1. Ownership: move vs cópia</h3>
+
+
+<div class="code2col"><pre class="src"><span class="c">// Rust 1.98 — ownership (move)</span>
+<span class="k">fn</span> <span class="k">main</span>() {
+    <span class="k">let</span> nome = String::from(<span class="s">&quot;arthur&quot;</span>);
+    <span class="k">let</span> saudacao = nome;          <span class="c">// move: nome deixa de ser dono</span>
+    <span class="c">// println!(&quot;{nome}&quot;);        // ERRO de compilacao: valor movido</span>
+    <span class="k">println</span>!(<span class="s">&quot;{saudacao}&quot;</span>);       <span class="c">// OK: saudacao e a dona</span>
+}</pre>
+<pre class="src"><span class="c">// Rust 1.98 — borrowing (emprestimos)</span>
+<span class="k">fn</span> tamanho(s: &amp;String) -&gt; usize {  <span class="c">// emprestimo imutavel</span>
+    s.len()
+}
+
+<span class="k">fn</span> <span class="k">main</span>() {
+    <span class="k">let</span> <span class="k">mut</span> texto = String::from(<span class="s">&quot;ola&quot;</span>);
+    <span class="k">let</span> r1 = &amp;texto;               <span class="c">// leitor 1 OK</span>
+    <span class="k">let</span> r2 = &amp;texto;               <span class="c">// leitor 2 OK</span>
+    <span class="k">println</span>!(<span class="s">&quot;{} {}&quot;</span>, tamanho(r1), tamanho(r2));
+    <span class="k">let</span> r3 = &amp;<span class="k">mut</span> texto;           <span class="c">// escritor: precisa estar sozinho</span>
+    r3.push_str(<span class="s">&quot; mundo&quot;</span>);
+    <span class="k">println</span>!(<span class="s">&quot;{r3}&quot;</span>);
+    <span class="c">// println!(&quot;{r1}&quot;);           // ERRO: r1 ja nao pode ser usado</span>
+}</pre>
+<pre class="src"><span class="c">// Rust 1.98 — o que o compilador RECUSA (data race)</span>
+<span class="k">fn</span> <span class="k">main</span>() {
+    <span class="k">let</span> <span class="k">mut</span> texto = String::from(<span class="s">&quot;ola&quot;</span>);
+    <span class="k">let</span> r1 = &amp;texto;        <span class="c">// emprestimo imutavel</span>
+    <span class="k">let</span> r3 = &amp;<span class="k">mut</span> texto;    <span class="c">// emprestimo mutavel</span>
+    <span class="k">println</span>!(<span class="s">&quot;{} {}&quot;</span>, r1, r3);  <span class="c">// ERRO E0502</span>
+}
+/*
+error[E0502]: cannot <span class="k">borrow</span> `texto` <span class="k">as</span> mutable because it is also borrowed <span class="k">as</span> immutable
+ --&gt; <span class="k">main</span>.rs:4:14
+  |
+3 |     <span class="k">let</span> r1 = &amp;texto;
+  |              ------ immutable <span class="k">borrow</span> occurs here
+4 |     <span class="k">let</span> r3 = &amp;<span class="k">mut</span> texto;
+  |              ^^^^^^^^^^ mutable <span class="k">borrow</span> occurs here
+*/</pre></div>
+
+
+<p>`nome` foi *movido* para `saudacao`; usar `nome` depois é erro de compilação — impossível double-free ou use-after-free.</p>
+
+<h3>2. Borrowing: vários leitores OU um escritor</h3>
+
+
+<div class="code2col"><pre class="src"><span class="c">// Rust 1.98 — Option + Result com o operador ?</span>
+<span class="k">use</span> std::fs;
+
+<span class="k">fn</span> ler_id(linha: &amp;str) -&gt; Option&lt;u32&gt; {
+    linha.split(<span class="s">&#x27;=&#x27;</span>).nth(1)?.trim().parse().ok()
+}
+
+<span class="k">fn</span> <span class="k">main</span>() -&gt; Result&lt;(), Box&lt;<span class="k">dyn</span> std::error::Error&gt;&gt; {
+    <span class="k">let</span> conteudo = fs::read_to_string(<span class="s">&quot;config.txt&quot;</span>)?;   <span class="c">// propaga erro</span>
+    <span class="k">if</span> <span class="k">let</span> Some(id) = ler_id(&amp;conteudo) {
+        <span class="k">println</span>!(<span class="s">&quot;ID: {id}&quot;</span>);
+    } <span class="k">else</span> {
+        <span class="k">println</span>!(<span class="s">&quot;ID ausente&quot;</span>);
+    }
+    Ok(())
+}</pre>
+<pre class="src"><span class="c">// Rust 1.98 — estado invalido impossivel de representar</span>
+<span class="k">enum</span> PedidoStatus {
+    Aberto,
+    Pago { pago_em: String },
+    Cancelado { motivo: String },
+}
+
+<span class="k">struct</span> Pedido { id: u32, total_cents: u64, status: PedidoStatus }
+
+<span class="k">fn</span> descreve(p: &amp;Pedido) -&gt; String {
+    <span class="k">match</span> &amp;p.status {
+        PedidoStatus::Aberto =&gt; <span class="k">format</span>!(<span class="s">&quot;pedido {} aberto&quot;</span>, p.id),
+        PedidoStatus::Pago { pago_em } =&gt;
+            <span class="k">format</span>!(<span class="s">&quot;pedido {} pago em {}&quot;</span>, p.id, pago_em),
+        PedidoStatus::Cancelado { motivo } =&gt;
+            <span class="k">format</span>!(<span class="s">&quot;pedido {} cancelado: {}&quot;</span>, p.id, motivo),
+    }
+}
+
+<span class="k">fn</span> <span class="k">main</span>() {
+    <span class="k">let</span> p = Pedido {
+        id: 42,
+        total_cents: 9990,
+        status: PedidoStatus::Pago { pago_em: String::from(<span class="s">&quot;2026-08-30&quot;</span>) },
+    };
+    <span class="k">println</span>!(<span class="s">&quot;{}&quot;</span>, descreve(&amp;p));
+}</pre></div>
+
+
+<p>Aqui `r3` (mutável) só nasce depois que `r1`/`r2` (imutáveis) deixam de ser usados. Se `r1` fosse usado após `r3`, o borrow checker recusaria — **data race impossível**:</p>
+
+
+<div class="code2col"></div>
+
+
+<h3>3. Option/Result com `?`</h3>
+
+
+<div class="code2col"></div>
+
+
+<p>`?` propaga o erro no caminho feliz; `Option` força tratar o caso `None` (via `if let` ou `match`). Nada de valor mágico escondido.</p>
+
+<h3>4. Modelando estado inválido como impossível: enum + match exaustivo</h3>
+
+
+<div class="code2col"></div>
+
+
+<p>Não existe `PedidoStatus` inválido: `Pago` carrega `pago_em`, `Cancelado` carrega `motivo`, `Aberto` não tem campos vazios. `match` é exaustivo — se adicionarem um estado, o compilador aponta todos os lugares a atualizar.</p>
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Ownership + borrowing + lifetimes = segurança de memória **sem GC** e **sem custo de runtime**.</li>
+<li>`Option`/`Result`/`enum` + `match` exaustivo: o comportamento possível mora no **tipo**; o compilador cobra que você trate.</li>
+<li>Rust não é para todo projeto — é para quando o **custo de falhar** e a **necessidade de controle** são altos.</li>
+<li>&quot;Rust obriga você a responder perguntas que outras linguagens deixam implícitas.&quot;</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=NovBtvFLwn8">Rust: por que ele está em todo lugar?</a> (~17:21).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

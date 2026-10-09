@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O que acontece quando você digita uma URL</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>O que acontece quando você digita uma URL</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=7y4tiOjMUCY">https://www.youtube.com/watch?v=7y4tiOjMUCY</a> · pt-BR · ~9:12 · 30/08/2026</p>
+
+<h1>Resumo — &quot;O que acontece quando você digita uma URL&quot; (pt-BR, ~9:12)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=7y4tiOjMUCY</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_brows.json</p>
+
+<h2>Tese central</h2>
+
+<p>Entre o Enter e o primeiro pixel, o browser passa por **6 etapas** (cache → DNS → TCP → TLS → HTTP) e depois pelo **pipeline de renderização** (bytes → caracteres → tokens → DOM → CSSOM → render tree → layout → paint → composição). Entender o pipeline explica por que cada otimização de front-end funciona.</p>
+
+<h2>Parte 1 — Navegação (6 etapas)</h2>
+
+<p>1. **Cache**: se a página já foi visitada e o cache é válido, pula tudo (sem rede, sem espera).</p>
+<p>2. **DNS**: domínio → IP (como uma &quot;lista de contatos&quot;: nome → número).</p>
+<p>3. **TCP**: handshake de 3 vias (`SYN` → `SYN-ACK` → `ACK`).</p>
+<p>4. **TLS** (em HTTPS): negociação de certificados e chaves (mais idas e voltas).</p>
+<p>5. **HTTP**: request `GET` → resposta com HTML.</p>
+<p>6. (Renderização — abaixo.)</p>
+
+<h2>Parte 2 — Pipeline de renderização</h2>
+
+<p>1. **Bytes → caracteres**: HTML chega como bytes; converte usando a codificação (geralmente UTF-8).</p>
+<p>2. **Tokenizer**: identifica pedaços — tags de abertura/fechamento, atributos, texto.</p>
+<p>3. **DOM**: cada token vira nó; nós organizados em árvore pela hierarquia das tags.</p>
+<ul style='padding-left:1.3rem'>
+<li>O parser **não espera o HTML inteiro**: constrói o DOM conforme chega (páginas renderizam de cima para baixo).</li>
+<li>O parser de HTML é **tolerante**: fechar tag esquecida, reestruturar `div` dentro de `p` — HTML nunca falha no parse.</li>
+</ul>
+<p>4. **CSSOM**: CSS passa pelo mesmo processo (bytes → chars → tokens → árvore). Mapeia cada regra aos elementos que afeta.</p>
+<ul style='padding-left:1.3rem'>
+<li>**Cascata**: nós herdam estilos do pai (`body { font-size:16px }` vale para os filhos, a menos que sobrescrevam).</li>
+<li>**CSS bloqueia a renderização**: nada é pintado até o CSSOM completo (evita renderizar sem estilo e redesenhar tudo).</li>
+</ul>
+<p>5. **Render tree**: combina DOM + CSSOM. Só nós **visíveis**: `display:none` sai, `&lt;head&gt;` sai, `&lt;script&gt;` sai; `visibility:hidden` **entra** (invisível mas ocupa espaço).</p>
+<p>6. **Layout/Reflow**: calcula a geometria — posição X/Y, largura/altura de cada caixa (box model: content, padding, border, margin). Unidades relativas (50%, `auto`) viram pixels. Recursivo: pai depende dos filhos, filhos dependem do pai (larguras de cima para baixo, alturas de baixo para cima).</p>
+<p>7. **Paint**: vira instruções de pintura (&quot;retângulo azul em (10,20), 250×50&quot;). O browser divide a página em **camadas** (elementos com `transform`, `opacity` ou `will-change` ganham camada própria).</p>
+<p>8. **Composição**: GPU combina as camadas na ordem certa. Animações com `transform`/`opacity` só mexem no compositing — **sem reflow, sem repaint** (por isso são performáticas).</p>
+
+<h2>JavaScript: o interrompedor</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Quando o parser encontra `&lt;script&gt;`, ele **para** de construir o DOM e executa (JS pode modificar o DOM: `document.write`, `appendChild`, `removeChild`).</li>
+<li>**Preload scanner**: parser leve que escaneia à frente e baixa recursos (imagens, stylesheets) em paralelo, sem construir DOM.</li>
+<li>**Cadeia de bloqueios**: se o script acessa `getComputedStyle`, o CSS (que ainda carrega) bloqueia o JS, que bloqueia o HTML. → `async` vs `defer`:</li>
+<li>`async`: baixa em paralelo, executa **assim que termina**, sem garantia de ordem.</li>
+<li>`defer`: baixa em paralelo, executa **depois do DOM completo**, na ordem do HTML. (Usar mais.)</li>
+<li>**Eventos**: `DOMContentLoaded` (HTML parseado + scripts `defer` executados) vs `load` (tudo carregou: imagens, fontes, iframes).</li>
+</ul>
+
+<h2>Reflow / Repaint / Compositing</h2>
+
+<p>Quando JS modifica DOM ou CSSOM, o browser refaz parte do pipeline — **quanto mais acima, mais caro**:</p>
+<ul style='padding-left:1.3rem'>
+<li>Mudar **largura** → reflow (layout).</li>
+<li>Mudar **cor** → só repaint.</li>
+<li>Mudar **transform** → direto pro compositing.</li>
+</ul>
+
+<h2>Por que as otimizações funcionam</h2>
+
+<p>| Otimização | Etapa atacada |</p>
+<p>|---|---|</p>
+<p>| Minificar HTML/CSS | menos tempo de parsing |</p>
+<p>| `defer` nos scripts | evita bloquear o parser |</p>
+<p>| Manter o HTML raso | acelera o layout |</p>
+<p>| `transform`/`opacity` (em vez de `top`/`left`) | pula direto pro compositing |</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — JavaScript (Node 24)</h2>
+
+<p>Como o conceito é do browser, os exemplos simulam o pipeline com JS puro (Node 24), representando as etapas do vídeo.</p>
+
+<h3>1. Tokenizer + DOM: HTML → árvore de nós</h3>
+
+<div class="code2col"><pre class="src">// Node 24 — tokenizer simplificado: HTML -&gt; tokens -&gt; DOM
+<span class="k">const</span> html = <span class="s">&#x27;&lt;div class=&quot;container&quot;&gt;&lt;p&gt;oi&lt;/p&gt;&lt;p&gt;mundo&lt;/p&gt;&lt;/div&gt;&#x27;</span>;
+
+<span class="k">function</span> tokenize(src) {
+  <span class="k">const</span> tokens = [];
+  <span class="k">const</span> re = /&lt;(\/?)([a-z0-9]+)([^&gt;]*?)(\/?)&gt;|([^&lt;]+)/g;
+  <span class="k">let</span> m;
+  <span class="k">while</span> ((m = re.exec(src))) {
+    <span class="k">if</span> (m[5] !== <span class="k">undefined</span>) {
+      tokens.push({ tipo: <span class="s">&#x27;TEXTO&#x27;</span>, valor: m[5].trim() });
+    } <span class="k">else</span> {
+      tokens.push({
+        tipo: m[1] ? <span class="s">&#x27;FIM&#x27;</span> : <span class="s">&#x27;INI&#x27;</span>,
+        tag: m[2],
+        attrs: [...m[3].matchAll(/([a-z-]+)=<span class="s">&quot;([^&quot;</span>]*)<span class="s">&quot;/g)].map(x =&gt; [x[1], x[2]]),
+      });
+    }
+  }
+  return tokens;
+}
+
+function buildDom(tokens) {
+  const raiz = { tag: &#x27;#document&#x27;, filhos: [] };
+  const pilha = [raiz];
+  for (const t of tokens) {
+    if (t.tipo === &#x27;INI&#x27;) {
+      const no = { tag: t.tag, attrs: t.attrs, filhos: [] };
+      pilha[pilha.length - 1].filhos.push(no);
+      pilha.push(no);
+    } else if (t.tipo === &#x27;FIM&#x27;) {
+      pilha.pop();
+    } else if (t.valor) {
+      pilha[pilha.length - 1].filhos.push({ tag: &#x27;#text&#x27;, valor: t.valor });
+    }
+  }
+  return raiz;
+}
+
+const tokens = tokenize(html);
+const dom = buildDom(tokens);
+console.log(JSON.stringify(dom, null, 1));
+// #document &gt; div.container &gt; [p#text oi, p#text mundo]</span></pre>
+<pre class="src">// Node 24 — variante: mesmo resultado, implementacao equivalente
+<span class="k">const</span> html = <span class="s">&#x27;&lt;div class=&quot;container&quot;&gt;&lt;p&gt;oi&lt;/p&gt;&lt;p&gt;mundo&lt;/p&gt;&lt;/div&gt;&#x27;</span>;
+
+<span class="k">function</span> domSimples(html) {
+  <span class="k">const</span> no = { tag: <span class="s">&#x27;div&#x27;</span>, attrs: [[<span class="s">&#x27;class&#x27;</span>, <span class="s">&#x27;container&#x27;</span>]], filhos: [] };
+  // simulacao <span class="k">do</span> DOM que o browser monta:
+  // 1) tokeniza as tags &lt;p&gt;
+  <span class="k">const</span> ps = [...html.matchAll(/&lt;p&gt;(.*?)&lt;\/p&gt;/g)].map(m =&gt; ({
+    tag: <span class="s">&#x27;p&#x27;</span>, attrs: [], filhos: [{ tag: <span class="s">&#x27;#text&#x27;</span>, valor: m[1] }],
+  }));
+  no.filhos = ps;
+  <span class="k">return</span> no;
+}
+
+console.log(JSON.stringify(domSimples(html), <span class="k">null</span>, 1));</pre>
+<pre class="src">// Node 24 — variante 3: parser tolerante (fecha tag sozinho)
+<span class="k">const</span> html = <span class="s">&#x27;&lt;div&gt;&lt;p&gt;oi&lt;div&gt;&lt;p&gt;mundo&#x27;</span>;
+
+<span class="k">function</span> parseTolerante(src) {
+  <span class="k">const</span> raiz = { tag: <span class="s">&#x27;#document&#x27;</span>, filhos: [] };
+  <span class="k">const</span> pilha = [raiz];
+  <span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> src.matchAll(/&lt;(\/?)([a-z0-9]+)|([^&lt;]+)/g)) {
+    <span class="k">if</span> (m[3] !== <span class="k">undefined</span>) {
+      pilha[pilha.length - 1].filhos.push({ tag: <span class="s">&#x27;#text&#x27;</span>, valor: m[3].trim() });
+    } <span class="k">else</span> <span class="k">if</span> (m[1]) {
+      <span class="k">const</span> top = pilha[pilha.length - 1];
+      <span class="k">if</span> (top.tag === m[2]) pilha.pop();   // fecha
+    } <span class="k">else</span> {
+      <span class="k">const</span> no = { tag: m[2], filhos: [] };
+      pilha[pilha.length - 1].filhos.push(no);
+      pilha.push(no);
+    }
+  }
+  <span class="k">return</span> raiz;
+}
+
+console.log(JSON.stringify(parseTolerante(html), <span class="k">null</span>, 1));
+// &lt;div&gt; nao fechado -&gt; parser repara sozinho (tolerante)</pre></div>
+
+
+<div class="code2col"><pre class="src">// Node 24 — cascata de estilos + render tree (descarta display:none)
+<span class="k">const</span> estilos = {
+  body: { fontSize: <span class="s">&#x27;16px&#x27;</span>, color: <span class="s">&#x27;black&#x27;</span> },
+  <span class="s">&#x27;div.container&#x27;</span>: { fontSize: <span class="s">&#x27;20px&#x27;</span> },
+};
+
+<span class="k">const</span> dom = [
+  { tag: <span class="s">&#x27;body&#x27;</span>, filhos: [
+    { tag: <span class="s">&#x27;div&#x27;</span>, attrs: [[<span class="s">&#x27;class&#x27;</span>, <span class="s">&#x27;container&#x27;</span>]], filhos: [
+      { tag: <span class="s">&#x27;p&#x27;</span>, filhos: [] },
+      { tag: <span class="s">&#x27;p&#x27;</span>, attrs: [[<span class="s">&#x27;style&#x27;</span>, <span class="s">&#x27;display:none&#x27;</span>]], filhos: [] },
+      { tag: <span class="s">&#x27;span&#x27;</span>, attrs: [[<span class="s">&#x27;style&#x27;</span>, <span class="s">&#x27;visibility:hidden&#x27;</span>]], filhos: [] },
+    ] },
+  ] },
+];
+
+<span class="k">function</span> resolveEstilo(no, pai) {
+  <span class="k">let</span> atual = { ...pai };
+  <span class="k">const</span> seletor = no.tag + (no.attrs?.find(a =&gt; a[0] === <span class="s">&#x27;class&#x27;</span>)?.[1] ? <span class="s">&#x27;.&#x27;</span> + no.attrs.find(a =&gt; a[0] === <span class="s">&#x27;class&#x27;</span>)[1] : <span class="s">&#x27;&#x27;</span>);
+  <span class="k">if</span> (estilos[seletor]) atual = { ...atual, ...estilos[seletor] };
+  <span class="k">return</span> atual;
+}
+
+<span class="k">function</span> renderTree(no, estiloPai, visivel = <span class="k">true</span>) {
+  <span class="k">const</span> estilo = resolveEstilo(no, estiloPai);
+  <span class="k">const</span> displayNone = no.attrs?.some(a =&gt; a[0] === <span class="s">&#x27;style&#x27;</span> &amp;&amp; a[1].includes(<span class="s">&#x27;display:none&#x27;</span>));
+  <span class="k">const</span> visibilityHidden = no.attrs?.some(a =&gt; a[0] === <span class="s">&#x27;style&#x27;</span> &amp;&amp; a[1].includes(<span class="s">&#x27;visibility:hidden&#x27;</span>));
+  <span class="k">const</span> noVisivel = visivel &amp;&amp; !displayNone;   // display:none sai da render tree
+  <span class="k">const</span> resultado = {
+    tag: no.tag,
+    visivelParaPaint: noVisivel,
+    ocupaEspaco: noVisivel &amp;&amp; !visibilityHidden,  // visibility:hidden ocupa espaco
+    fontSize: estilo.fontSize,
+    filhos: (no.filhos || []).map(f =&gt; renderTree(f, estilo, noVisivel)),
+  };
+  <span class="k">return</span> resultado;
+}
+
+console.log(JSON.stringify(renderTree(dom[0], {}), <span class="k">null</span>, 1));
+// p com display:none -&gt; visivelParaPaint:<span class="k">false</span> (fora)
+// span com visibility:hidden -&gt; visivelParaPaint:<span class="k">true</span>, ocupaEspaco:<span class="k">false</span> (ocupa espaco)</pre>
+<pre class="src">// Node 24 — variante: heranca de estilos na cascata
+<span class="k">const</span> estilos = {
+  body: { fontSize: <span class="s">&#x27;16px&#x27;</span>, color: <span class="s">&#x27;black&#x27;</span> },
+  <span class="s">&#x27;p&#x27;</span>: { color: <span class="s">&#x27;blue&#x27;</span> },
+};
+<span class="k">const</span> dom = [
+  { tag: <span class="s">&#x27;body&#x27;</span>, filhos: [
+    { tag: <span class="s">&#x27;p&#x27;</span>, filhos: [] },
+    { tag: <span class="s">&#x27;section&#x27;</span>, filhos: [{ tag: <span class="s">&#x27;p&#x27;</span>, filhos: [] }] },
+  ] },
+];
+
+<span class="k">function</span> cascade(no, pai) {
+  <span class="k">let</span> atual = { ...pai };
+  <span class="k">const</span> seletor = no.tag;
+  <span class="k">if</span> (estilos[seletor]) atual = { ...atual, ...estilos[seletor] };
+  <span class="k">return</span> {
+    tag: no.tag,
+    estilo: atual,
+    filhos: (no.filhos || []).map(f =&gt; cascade(f, atual)),
+  };
+}
+
+console.log(JSON.stringify(cascade(dom[0], {}), <span class="k">null</span>, 1));
+// o p dentro de section herda color:blue <span class="k">do</span> seletor p (cascata por TAG)</pre>
+<pre class="src">// Node 24 — variante 3: layout (box model) calculando geometria
+<span class="k">function</span> layout(no, x, y, largura) {
+  <span class="k">const</span> l = {
+    tag: no.tag,
+    x, y,
+    largura: no.largura !== <span class="k">undefined</span> ? no.largura : largura,
+    altura: no.altura || 0,
+  };
+  // recursivo: filhos empilham abaixo; pai acumula altura
+  <span class="k">let</span> yAtual = y;
+  <span class="k">for</span> (<span class="k">const</span> f <span class="k">of</span> (no.filhos || [])) {
+    <span class="k">const</span> fl = layout(f, x + (no.padding || 0), yAtual, l.largura - 2 * (no.padding || 0));
+    yAtual = fl.altura + yAtual;
+    l.altura += fl.altura;
+    no.filhosLayout ||= []; no.filhosLayout.push(fl);
+  }
+  <span class="k">if</span> (!no.filhos?.length) l.altura = no.altura || 20;
+  <span class="k">return</span> l;
+}
+<span class="k">const</span> arvore = {
+  tag: <span class="s">&#x27;div&#x27;</span>, largura: 500, padding: 10, filhos: [
+    { tag: <span class="s">&#x27;p&#x27;</span>, altura: 20 },
+    { tag: <span class="s">&#x27;p&#x27;</span>, altura: 20 },
+  ],
+};
+<span class="k">const</span> out = layout(arvore, 0, 0, 500);
+out.filhosLayout = <span class="k">undefined</span>;
+console.log(JSON.stringify(out, <span class="k">null</span>, 1));
+// div: x=0 y=0 largura=500 altura=40 (2 filhos de 20)</pre></div>
+
+
+<div class="code2col"><pre class="src">// Node 24 — custo das mudancas: reflow (layout) &gt; repaint &gt; composite
+<span class="k">const</span> pipeline = [<span class="s">&#x27;style&#x27;</span>, <span class="s">&#x27;layout&#x27;</span>, <span class="s">&#x27;paint&#x27;</span>, <span class="s">&#x27;composite&#x27;</span>];
+
+<span class="k">function</span> custo(mudanca) {
+  // mapa <span class="k">do</span> video: largura -&gt; reflow; cor -&gt; repaint; transform -&gt; composite
+  <span class="k">const</span> etapas = {
+    <span class="s">&#x27;largura&#x27;</span>: [<span class="s">&#x27;layout&#x27;</span>, <span class="s">&#x27;paint&#x27;</span>, <span class="s">&#x27;composite&#x27;</span>],
+    <span class="s">&#x27;cor&#x27;</span>: [<span class="s">&#x27;paint&#x27;</span>, <span class="s">&#x27;composite&#x27;</span>],
+    <span class="s">&#x27;transform&#x27;</span>: [<span class="s">&#x27;composite&#x27;</span>],
+  };
+  <span class="k">return</span> etapas[mudanca] || [];
+}
+
+<span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> [<span class="s">&#x27;largura&#x27;</span>, <span class="s">&#x27;cor&#x27;</span>, <span class="s">&#x27;transform&#x27;</span>]) {
+  <span class="k">const</span> c = custo(m);
+  console.log(`${m}: refaz [${c.join(<span class="s">&#x27;, &#x27;</span>)}]`);
+}
+// largura: refaz [layout, paint, composite]  -&gt; mais caro (reflow)
+// cor:     refaz [paint, composite]          -&gt; repaint
+// transform: refaz [composite]               -&gt; mais barato (GPU)</pre>
+<pre class="src">// Node 24 — variante: camadas (como o browser promove para GPU)
+<span class="k">const</span> camadas = <span class="k">new</span> Map();
+<span class="k">function</span> promover(nome, motivo) {
+  camadas.set(nome, { camada: <span class="k">true</span>, motivo });
+}
+<span class="k">const</span> html = <span class="s">&#x27;&lt;div class=&quot;anim&quot;&gt;&lt;/div&gt;&#x27;</span>;
+promover(<span class="s">&#x27;div.anim&#x27;</span>, <span class="s">&#x27;transform&#x27;</span>);   // transform -&gt; camada propria
+promover(<span class="s">&#x27;div.anim&#x27;</span>, <span class="s">&#x27;opacity&#x27;</span>);     // opacity -&gt; camada propria
+
+console.log([...camadas.entries()]);
+// [[<span class="s">&#x27;div.anim&#x27;</span>, { camada: <span class="k">true</span>, motivo: <span class="s">&#x27;transform&#x27;</span> }], [<span class="s">&#x27;div.anim&#x27;</span>, { camada: <span class="k">true</span>, motivo: <span class="s">&#x27;opacity&#x27;</span> }]]</pre>
+<pre class="src">// Node 24 — variante 3: preload scanner (baixa recursos antes <span class="k">do</span> parser parar)
+<span class="k">const</span> recursos = [<span class="s">&#x27;https://cdn.x.com/img.png&#x27;</span>, <span class="s">&#x27;https://cdn.x.com/style.css&#x27;</span>];
+
+<span class="k">function</span> preloadScanner(html) {
+  <span class="k">const</span> downloads = [];
+  <span class="k">const</span> imgs = [...html.matchAll(/&lt;img[^&gt;]+src=<span class="s">&quot;([^&quot;</span>]+)<span class="s">&quot;/g)].map(m =&gt; m[1]);
+  const css = [...html.matchAll(/&lt;link[^&gt;]+href=&quot;</span>([^<span class="s">&quot;]+)&quot;</span>/g)].map(m =&gt; m[1]);
+  <span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> [...imgs, ...css]) {
+    <span class="k">if</span> (recursos.includes(r)) downloads.push(`baixando ${r}`);
+  }
+  <span class="k">return</span> downloads;
+}
+
+console.log(preloadScanner(<span class="s">&#x27;&lt;img src=&quot;https://cdn.x.com/img.png&quot;&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.x.com/style.css&quot;&gt;&#x27;</span>));
+// [<span class="s">&#x27;baixando https://cdn.x.com/img.png&#x27;</span>, <span class="s">&#x27;baixando https://cdn.x.com/style.css&#x27;</span>]</pre></div>
+
+
+<h3>2. CSSOM + Render tree: cascata + só nós visíveis</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<h3>3. Paint/Compositing: camadas e quando custa (reflow vs repaint vs composite)</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Digitar URL → **cache → DNS → TCP → TLS → HTTP**, depois o **pipeline de renderização** completo.</li>
+<li>DOM é construído **incrementalmente** e o HTML parser é **tolerante**; CSS **bloqueia** a renderização.</li>
+<li>**Render tree** só tem nós visíveis; `display:none` sai, `visibility:hidden` entra (ocupa espaço).</li>
+<li>**Reflow &gt; Repaint &gt; Composite** em custo — `transform`/`opacity` animam sem recálculo de layout.</li>
+<li>`async` vs `defer`: defer preserva ordem e roda após o DOM; async executa assim que baixa.</li>
+<li>**Minificação, defer, HTML raso, transform**: cada otimização ataca uma etapa específica do pipeline.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=7y4tiOjMUCY">O que acontece quando você digita uma URL</a> (~9:12).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

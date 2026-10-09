@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — SQL vs NoSQL</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Design — SQL vs NoSQL</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=ILt31254Up4">https://www.youtube.com/watch?v=ILt31254Up4</a> · pt-BR · ~7 · 30/08/2026</p>
+
+<h1>Resumo — &quot;System Design: SQL vs NoSQL&quot; (pt-BR, ~7:43)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=ILt31254Up4</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_sd4.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Relacional ou não relacional? A resposta é sempre **&quot;depende&quot;** — depende do formato dos seus dados, das consultas que você faz e das garantias que você precisa.</p>
+
+<h2>SQL: linguagem dos bancos relacionais</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Dados em **tabelas** com **colunas definidas** (esquema fixo): cada linha = registro, cada coluna = atributo, tudo **estruturado e tipado**.</li>
+<li>**Relacional** vem dos relacionamentos entre tabelas: `pedidos` referencia `usuarios` por um ID.</li>
+<li>**JOIN**: com uma query você combina várias tabelas. Ex.: trazer o nome do usuário junto com os pedidos dele.</li>
+<li>Para isso, o banco precisa **conhecer o esquema** antes — você define colunas e tipos. Inserir texto onde era número → **erro**.</li>
+<li>MySQL, PostgreSQL, SQL Server, Oracle.</li>
+</ul>
+
+<h2>NoSQL: tudo que não é relacional</h2>
+
+<p>Família de bancos, cada tipo resolvendo um problema:</p>
+
+<p>| Tipo | Exemplo | Uso |</p>
+<p>|---|---|---|</p>
+<p>| Documento | MongoDB, CouchDB | dados em JSON, sem formatos fixos |</p>
+<p>| Chave-valor | Redis, DynamoDB | hashmap gigante, velocidade |</p>
+<p>| Colunar | Cassandra, Redshift | leitura otimizada de colunas específicas |</p>
+<p>| Grafo | Neo4j | relacionamentos complexos |</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Desnormaliza**: em vez de separar `usuarios` e `pedidos`, guarda os pedidos **dentro** do documento do usuário → tudo em **uma leitura**.</li>
+<li>**Esquema flexível ou inexistente**: cada documento pode ter campos diferentes; não precisa migrar tabela para adicionar campo.</li>
+<li>Acelera desenvolvimento, **mas exige disciplina** (dados duplicados precisam de cuidado).</li>
+</ul>
+
+<h2>Garantias: ACID vs BASE</h2>
+
+<h3>ACID (relacionais)</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Atomicidade**: transação executa completa ou não executa nada. Transferir = debitar E creditar, ou nenhum dos dois.</li>
+<li>**Consistência**: o banco respeita as regras — não existe pedido sem usuário.</li>
+<li>**Isolamento**: transações paralelas não interferem entre si.</li>
+<li>**Durabilidade**: se confirmou, está salvo (mesmo se a luz cair).</li>
+<li>Lugar certo: **consistência crítica** — banco, estoque, dinheiro, recursos limitados.</li>
+</ul>
+
+<h3>BASE (muitos NoSQL)</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Basically Available**: sempre responde, mesmo com dado desatualizado.</li>
+<li>**Soft state**: o estado pode mudar sem input.</li>
+<li>**Eventually consistent**: todos os nós concordam, mas **não imediatamente**.</li>
+<li>Exemplo do vídeo: você posta uma foto, um servidor confirma; o amigo em outro servidor não vê na hora, mas alguns segundos depois aparece. **Rede social: aceitável. Banco: talvez não.**</li>
+</ul>
+
+<h2>Como cada um escala</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**SQL**: tradicionalmente **vertical** para escrita (réplicas só para leitura; escrita vai para um servidor só) → **gargalo** conforme a carga sobe.</li>
+<li>**NoSQL** (muitos): desenhado para **horizontal** — dados particionados entre nós, escrita e leitura distribuídas. Mas **abre mão do ACID** em troca de escalabilidade. É um **tradeoff**.</li>
+</ul>
+
+<h2>Consultas: flexibilidade vs previsibilidade</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**SQL**: flexível — joins, filtros complexos, agregações, ordenação. &quot;Você pode perguntar qualquer coisa para seus dados.&quot;</li>
+<li>**NoSQL**: otimizado para **buscar por chave** — `SELECT * FROM usuarios WHERE id = 123` é instantâneo. Mas &quot;todos que compraram X no mês passado&quot; pode ser **lento ou impossível** (join entre coleções geralmente não existe — faz na aplicação).</li>
+<li>**Modelagem**: no relacional você modela os dados e depois faz as queries; no NOSQL você **precisa saber as queries antes de modelar**. Se o padrão de acesso mudar, talvez precise reestruturar tudo.</li>
+</ul>
+
+<h2>Quando usar cada um</h2>
+
+<h3>Relacional</h3>
+<ul style='padding-left:1.3rem'>
+<li>Dados bem definidos e **relacionados** (usuários, pedidos, produtos, pagamentos).</li>
+<li>**Transações ACID** — fintech, e-commerce, dinheiro.</li>
+<li>Consultas **complexas e variadas** — relatórios, analytics, dashboards.</li>
+<li>Integridade dos dados importa mais que performance — sistemas financeiros, ERPs, CRMs.</li>
+</ul>
+
+<h3>NoSQL</h3>
+<ul style='padding-left:1.3rem'>
+<li>Esquema **muda o tempo todo** — startups iterando rápido, dados semiestruturados.</li>
+<li>**Escala horizontal massiva** — milhões de operações por segundo.</li>
+<li>Dados desnormalizados fazem sentido — perfis, catálogos, logs.</li>
+<li>Padrão de acesso **previsível** — sempre busca por ID, sempre grava no mesmo formato.</li>
+<li>Casos: feeds de redes sociais, cache/sessões (chave-valor puro), IoT/telemetria, jogos/rankings/inventários.</li>
+</ul>
+
+<h2>Poliglota persistence: o mundo real</h2>
+
+<p>Sistemas grandes usam **vários tipos de banco**, cada um para seu problema: PostgreSQL para transações, Redis para cache/sessões, Elasticsearch para busca textual. **Ferramenta certa para o caso certo** — mas com custo de operação.</p>
+
+<p>⚠️ **Não comece assim**. Comece com **um banco só** e adicione outros quando a necessidade for real. Complexidade prematura é tão ruim quanto escala prematura.</p>
+
+<h2>Regra de ouro</h2>
+
+<p>&gt; Em dúvida? **Comece com relacional.** É mais flexível para consultar e mais seguro para dados críticos. Migre para NoSQL quando tiver um problema real que o relacional não resolve.</p>
+
+<h2>Exemplo de código — transação ACID com rollback (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — atomicidade: debitar + creditar, ou nada (rollback)</span>
+<span class="k">class</span> Conta:
+    <span class="k">def</span> __init__(self, saldo): self.saldo = saldo
+
+<span class="k">def</span> transferir(origem, destino, valor):
+    backup = (origem.saldo, destino.saldo)   <span class="c"># salva estado</span>
+    origem.saldo -= valor
+    <span class="k">if</span> origem.saldo &lt; 0:                     <span class="c"># violou regra -&gt; desfaz</span>
+        <span class="k">print</span>(<span class="s">&quot;REJEITADO (sem saldo) -&gt; rollback&quot;</span>)
+        origem.saldo, destino.saldo = backup
+        <span class="k">return</span> <span class="k">False</span>
+    destino.saldo += valor
+    <span class="k">return</span> <span class="k">True</span>
+
+a, b = Conta(100), Conta(50)
+ok = transferir(a, b, 70)
+<span class="k">print</span>(<span class="s">&quot;transferiu 70:&quot;</span>, ok, <span class="s">&quot;| a:&quot;</span>, a.saldo, <span class="s">&quot;b:&quot;</span>, b.saldo)
+ok = transferir(a, b, 999)   <span class="c"># a tem 30 -&gt; rejeita e desfaz</span>
+<span class="k">print</span>(<span class="s">&quot;transferiu 999:&quot;</span>, ok, <span class="s">&quot;| a:&quot;</span>, a.saldo, <span class="s">&quot;b:&quot;</span>, b.saldo)
+<span class="c"># transferiu 70: True | a: 30 b: 120</span>
+<span class="c"># REJEITADO (sem saldo) -&gt; rollback</span>
+<span class="c"># transferiu 999: False | a: 30 b: 120</span></pre></div>
+
+
+<p>É assim que o **A** de ACID funciona na prática: a transação é um bloco único — se qualquer passo falhar (aqui, saldo insuficiente), **nada** é aplicado. Um banco relacional garante isso com `BEGIN`/`COMMIT`/`ROLLBACK` (e isolamento entre transações concorrentes).</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=ILt31254Up4">System Design — SQL vs NoSQL</a> (~7).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

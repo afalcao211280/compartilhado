@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — A Base das Entrevistas de Algoritmo (Big O)</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --fg: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --accent2: #f0883e;
+    --code-bg: #0a0e14; --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6; }
+  .wrap { max-width: 100%; padding: 2rem 2.5rem; margin: 0 auto; }
+  h1 { font-size: 1.7rem; color: var(--accent); }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2rem;
+    border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.05rem; color: var(--accent2); }
+  a { color: var(--accent); }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .combo { background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .combo strong { color: var(--accent); }
+  .code2col { display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem; margin: 1rem 0; }
+  @media (max-width: 1100px) { .code2col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px)  { .code2col { grid-template-columns: 1fr; } }
+  .src { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: .9rem 1rem; overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: .82rem; line-height: 1.5; margin: 0; }
+  .k { color: #ff7b72; } .t { color: #79c0ff; } .s { color: #a5d6ff; }
+  .c { color: #8b949e; font-style: italic; }
+  footer { margin-top: 3rem; padding-top: 1rem;
+    border-top: 1px solid var(--border); color: var(--muted);
+    font-size: .85rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resumo — "A Base das Entrevistas de Algoritmo (Big O)"</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=JegDr-LFaTY">youtube.com/watch?v=JegDr-LFaTY</a> · pt-BR · ~6:52 · 30/08/2026</p>
+  <p><strong>Tese central:</strong> o mesmo código que parece instantâneo com 100 usuários pode travar com 1 milhão. Big O enxerga <em>qual operação cresce junto com os dados</em> antes de escolher estrutura e algoritmo.</p>
+
+  <h2>Pontos-chave</h2>
+  <div class="combo">
+    <p><strong>1. Estrutura ≠ algoritmo.</strong> Estrutura = como os dados ficam guardados; algoritmo = sequência de passos. Andam juntos: a melhor estrutura torna o algoritmo bem mais direto.</p>
+    <p><strong>2. Pergunte: qual operação priorizar?</strong> Buscar, inserir, remover, percorrer, manter ordem, consultar por chave. Cada estrutura favorece umas e deixa outras caras.</p>
+    <p><strong>3. Índice por e-mail.</strong> Lista = testa um por um (O(n)); índice = vai direto na chave (O(1)). Às vezes a melhoria vem de guardar os dados de outro jeito, não dos passos.</p>
+    <p><strong>4. Milissegundos enganam.</strong> Mudam com máquina, linguagem, banco, cache. A pergunta certa: <em>o que acontece quando o dado cresce?</em></p>
+    <p><strong>5. Crescimento.</strong> Loop = O(n); dois loops aninhados = O(n²). Com 100.000 itens, O(n²) fica inviável.</p>
+    <p><strong>6. Space–time tradeoff.</strong> Gastar memória (índice por fora) economiza passos.</p>
+    <p><strong>7. 4 perguntas.</strong> Quem é o N? Qual a operação mais comum? Qual estrutura ajuda? Como o custo cresce?</p>
+    <p><strong>8. Melhor/pior/médio caso.</strong> Entrevista = pior caso; runtime = caso médio.</p>
+    <p><strong>9. Sinais.</strong> "Duplicados" → sem comparar todos × todos; "chave" → O(1); "próximo/menor/caminho/prefixo" → famílias específicas.</p>
+    <p><strong>10. Big O não é dogma.</strong> Menor notação ≠ sempre melhor; depende do limite de memória/tempo e do volume.</p>
+  </div>
+
+  <h2>Exemplos de código — busca com e sem índice</h2>
+  <p>3 exemplos, validação real (Node v24.19.0, OpenJDK 26.0.2.1, Python 3.14.7 — saídas equivalentes).</p>
+
+  <h3>1. Busca linear O(n) vs busca binária O(log n)</h3>
+  <div class="code2col">
+  <pre class="src"><span class="c">// JavaScript (Node) — O(n) vs O(log n)</span>
+<span class="k">const</span> contas = <span class="t">Array</span>.from(
+  { length: 100000 },
+  (_, i) =&gt; ({ id: i,
+    email: <span class="s">`user${i}@x.com`</span> }));
+
+<span class="c">// O(n): percorre até achar</span>
+<span class="k">function</span> buscaLinear(lista, email) {
+  <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> lista)
+    <span class="k">if</span> (c.email === email) <span class="k">return</span> c;
+  <span class="k">return</span> <span class="k">null</span>;
+}
+
+<span class="c">// O(log n): descarta metade a cada passo</span>
+<span class="c">// (lista ORDENADA por email)</span>
+<span class="k">function</span> buscaBinaria(lista, email) {
+  <span class="k">let</span> lo = 0, hi = lista.length - 1;
+  <span class="k">while</span> (lo &lt;= hi) {
+    <span class="k">const</span> mid = (lo + hi) &gt;&gt; 1;
+    <span class="k">const</span> e = lista[mid].email;
+    <span class="k">if</span> (e === email) <span class="k">return</span> lista[mid];
+    <span class="k">if</span> (e &lt; email) lo = mid + 1;
+    <span class="k">else</span> hi = mid - 1;
+  }
+  <span class="k">return</span> <span class="k">null</span>;
+}
+
+<span class="k">const</span> alvo = <span class="s">'user99999@x.com'</span>;
+<span class="k">const</span> t0 = performance.now();
+<span class="k">const</span> r1 = buscaLinear(contas, alvo);
+<span class="k">const</span> t1 = performance.now();
+contas.sort((a, b) =&gt;
+  a.email.localeCompare(b.email));
+<span class="k">const</span> r2 = buscaBinaria(contas, alvo);
+<span class="k">const</span> t2 = performance.now();
+console.log({ linear: <span class="t">Math</span>.round(t1 - t0),
+  binaria: <span class="t">Math</span>.round(t2 - t1),
+  achou: r2 !== <span class="k">null</span> });</pre>
+  <pre class="src"><span class="c">// Java 26 — O(n) vs O(log n)</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> BuscaDemo {
+  <span class="k">record</span> Conta(<span class="t">int</span> id,
+    <span class="t">String</span> email) {}
+
+  <span class="k">static</span> Conta linear(
+    <span class="t">List</span>&lt;Conta&gt; l, <span class="t">String</span> em) {
+    <span class="k">for</span> (Conta c : l)
+      <span class="k">if</span> (c.email.equals(em))
+        <span class="k">return</span> c;
+    <span class="k">return</span> <span class="k">null</span>;
+  }
+
+  <span class="k">static</span> Conta binaria(
+    <span class="t">List</span>&lt;Conta&gt; l, <span class="t">String</span> em) {
+    <span class="t">int</span> lo = 0, hi = l.size() - 1;
+    <span class="k">while</span> (lo &lt;= hi) {
+      <span class="t">int</span> mid = (lo + hi) &gt;&gt;&gt; 1;
+      <span class="t">int</span> cmp =
+        l.get(mid).email.compareTo(em);
+      <span class="k">if</span> (cmp == 0)
+        <span class="k">return</span> l.get(mid);
+      <span class="k">if</span> (cmp &lt; 0) lo = mid + 1;
+      <span class="k">else</span> hi = mid - 1;
+    }
+    <span class="k">return</span> <span class="k">null</span>;
+  }
+
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    <span class="k">var</span> l = <span class="k">new</span> <span class="t">ArrayList</span>&lt;Conta&gt;();
+    <span class="k">for</span> (<span class="t">int</span> i = 0; i &lt; 100_000; i++)
+      l.add(<span class="k">new</span> Conta(i,
+        <span class="s">"user"</span> + i + <span class="s">"@x.com"</span>));
+    <span class="t">String</span> alvo =
+      <span class="s">"user99999@x.com"</span>;
+    <span class="t">long</span> t0 = <span class="t">System</span>.nanoTime();
+    <span class="k">var</span> r1 = linear(l, alvo);
+    <span class="t">long</span> t1 = <span class="t">System</span>.nanoTime();
+    l.sort(<span class="t">Comparator</span>
+      .comparing(Conta::email));
+    <span class="k">var</span> r2 = binaria(l, alvo);
+    <span class="t">long</span> t2 = <span class="t">System</span>.nanoTime();
+    <span class="t">System</span>.out.println(
+      <span class="s">"linear  : "</span> +
+      (t1 - t0) / 1_000_000 +
+      <span class="s">" ms"</span>);
+    <span class="t">System</span>.out.println(
+      <span class="s">"binaria : "</span> +
+      (t2 - t1) / 1_000_000 +
+      <span class="s">" ms"</span>);
+    <span class="t">System</span>.out.println(
+      <span class="s">"achou   : "</span> +
+      (r2 != <span class="k">null</span>));
+  }
+}</pre>
+  <pre class="src"><span class="c"># Python 3.14 — O(n) vs O(log n)</span>
+<span class="k">import</span> time
+
+contas = [{<span class="s">"id"</span>: i,
+  <span class="s">"email"</span>: <span class="s">f"user{i}@x.com"</span>}
+  <span class="k">for</span> i <span class="k">in</span> <span class="t">range</span>(100_000)]
+
+<span class="k">def</span> linear(lista, email):
+    <span class="k">for</span> c <span class="k">in</span> lista:
+        <span class="k">if</span> c[<span class="s">"email"</span>] == email:
+            <span class="k">return</span> c
+    <span class="k">return</span> <span class="k">None</span>
+
+<span class="k">def</span> binaria(lista, email):
+    lo, hi = 0, len(lista) - 1
+    <span class="k">while</span> lo &lt;= hi:
+        mid = (lo + hi) // 2
+        e = lista[mid][<span class="s">"email"</span>]
+        <span class="k">if</span> e == email:
+            <span class="k">return</span> lista[mid]
+        <span class="k">if</span> e &lt; email: lo = mid + 1
+        <span class="k">else</span>: hi = mid - 1
+    <span class="k">return</span> <span class="k">None</span>
+
+alvo = <span class="s">"user99999@x.com"</span>
+t0 = <span class="t">time</span>.perf_counter()
+r1 = linear(contas, alvo)
+t1 = <span class="t">time</span>.perf_counter()
+contas.sort(key=<span class="k">lambda</span> c:
+  c[<span class="s">"email"</span>])
+r2 = binaria(contas, alvo)
+t2 = <span class="t">time</span>.perf_counter()
+<span class="t">print</span>(<span class="s">f"linear  : {round((t1-t0)*1000)} ms"</span>)
+<span class="t">print</span>(<span class="s">f"binaria : {round((t2-t1)*1000)} ms"</span>)
+<span class="t">print</span>(<span class="s">"achou   :"</span>,
+  r2 <span class="k">is not</span> <span class="k">None</span>)</pre>
+  </div>
+
+  <h3>2. Dois loops aninhados O(n²)</h3>
+  <div class="code2col">
+  <pre class="src"><span class="c">// JavaScript — O(n²)</span>
+<span class="c">// achar duplicados SEM estrutura auxiliar</span>
+<span class="k">function</span> duplicados(l) {
+  <span class="k">const</span> out = [];
+  <span class="k">for</span> (<span class="k">let</span> i = 0; i &lt; l.length; i++)
+    <span class="k">for</span> (<span class="k">let</span> j = i + 1;
+      j &lt; l.length; j++)
+      <span class="k">if</span> (l[i] === l[j]
+          &amp;&amp; !out.includes(l[i]))
+        out.push(l[i]);
+  <span class="k">return</span> out;
+}
+console.log(duplicados(
+  [3, 1, 4, 1, 5, 9, 2, 6, 5]));
+<span class="c">// [ 1, 5 ]</span></pre>
+  <pre class="src"><span class="c">// Java 26 — O(n²)</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> O2Demo {
+  <span class="k">static</span> <span class="t">List</span>&lt;<span class="t">Integer</span>&gt;
+    dup(<span class="t">List</span>&lt;<span class="t">Integer</span>&gt; l) {
+    <span class="k">var</span> out =
+      <span class="k">new</span> <span class="t">ArrayList</span>&lt;<span class="t">Integer</span>&gt;();
+    <span class="k">for</span> (<span class="t">int</span> i = 0;
+      i &lt; l.size(); i++)
+      <span class="k">for</span> (<span class="t">int</span> j = i + 1;
+        j &lt; l.size(); j++)
+        <span class="k">if</span> (l.get(i).equals(l.get(j))
+            &amp;&amp; !out.contains(l.get(i)))
+          out.add(l.get(i));
+    <span class="k">return</span> out;
+  }
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    <span class="t">System</span>.out.println(dup(
+      <span class="t">List</span>.of(3, 1, 4, 1, 5, 9,
+        2, 6, 5)));
+  }
+}</pre>
+  <pre class="src"><span class="c"># Python 3.14 — O(n²)</span>
+<span class="k">def</span> duplicados(l):
+    out = []
+    <span class="k">for</span> i <span class="k">in</span> <span class="t">range</span>(len(l)):
+        <span class="k">for</span> j <span class="k">in</span> <span class="t">range</span>(i + 1,
+          len(l)):
+            <span class="k">if</span> (l[i] == l[j]
+                <span class="k">and</span> l[i]
+                <span class="k">not in</span> out):
+                out.append(l[i])
+    <span class="k">return</span> out
+
+<span class="t">print</span>(duplicados(
+  [3, 1, 4, 1, 5, 9, 2, 6, 5]))
+<span class="c"># [1, 5]</span></pre>
+  </div>
+
+  <h3>3. Índice por fora — O(n) → O(1)</h3>
+  <div class="code2col">
+  <pre class="src"><span class="c">// JavaScript — hash index</span>
+<span class="k">const</span> contas = [
+  { id: 1, email: <span class="s">'ana@x.com'</span> },
+  { id: 2, email: <span class="s">'bia@x.com'</span> },
+  { id: 3, email: <span class="s">'caio@x.com'</span> },
+];
+<span class="k">const</span> idx = <span class="k">new</span> <span class="t">Map</span>();
+<span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> contas)
+  idx.set(c.email, c);
+
+console.log(idx.get(
+  <span class="s">'bia@x.com'</span>));
+<span class="c">// { id: 2, email: 'bia@x.com' }</span>
+<span class="c">// sem índice: for O(n)</span></pre>
+  <pre class="src"><span class="c">// Java 26 — HashMap como índice</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> IndexDemo {
+  <span class="k">record</span> Conta(<span class="t">int</span> id,
+    <span class="t">String</span> email) {}
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    <span class="k">var</span> contas = <span class="t">List</span>.of(
+      <span class="k">new</span> Conta(1,
+        <span class="s">"ana@x.com"</span>),
+      <span class="k">new</span> Conta(2,
+        <span class="s">"bia@x.com"</span>),
+      <span class="k">new</span> Conta(3,
+        <span class="s">"caio@x.com"</span>));
+    <span class="k">var</span> idx =
+      <span class="k">new</span> <span class="t">HashMap</span>&lt;<span class="t">String</span>,
+        Conta&gt;();
+    <span class="k">for</span> (<span class="k">var</span> c : contas)
+      idx.put(c.email(), c);
+    <span class="t">System</span>.out.println(
+      idx.get(<span class="s">"bia@x.com"</span>));
+  }
+}</pre>
+  <pre class="src"><span class="c"># Python 3.14 — dict como índice</span>
+contas = [
+  {<span class="s">"id"</span>: 1,
+    <span class="s">"email"</span>: <span class="s">"ana@x.com"</span>},
+  {<span class="s">"id"</span>: 2,
+    <span class="s">"email"</span>: <span class="s">"bia@x.com"</span>},
+  {<span class="s">"id"</span>: 3,
+    <span class="s">"email"</span>: <span class="s">"caio@x.com"</span>},
+]
+<span class="c"># índice por e-mail</span>
+idx = {c[<span class="s">"email"</span>]: c
+  <span class="k">for</span> c <span class="k">in</span> contas}
+<span class="t">print</span>(idx[<span class="s">"bia@x.com"</span>])
+<span class="c"># {'id': 2, 'email': 'bia@x.com'}</span></pre>
+  </div>
+
+  <h2>Mapa mental — os 10 em uma linha</h2>
+  <div class="combo">
+    <p><strong>1.</strong> Estrutura ≠ algoritmo · <strong>2.</strong> Qual operação priorizar? · <strong>3.</strong> Lista O(n) vs índice O(1) · <strong>4.</strong> Melhor estrutura → algoritmo direto · <strong>5.</strong> Big O: o que cresce com o dado · <strong>6.</strong> O(n) vs O(n²) · <strong>7.</strong> Space–time tradeoff · <strong>8.</strong> Melhor/pior/médio (entrevista = pior) · <strong>9.</strong> Sinais: duplicados/chave/próximo/caminho · <strong>10.</strong> Menor notação ≠ sempre melhor.</p>
+  </div>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=JegDr-LFaTY">"A Base das Entrevistas de Algoritmo (Big O)"</a> (pt-BR, ~6:52). Código validado: Node v24.19.0, OpenJDK 26.0.2.1, Python 3.14.7.
+  </footer>
+</div>
+</body>
+</html>

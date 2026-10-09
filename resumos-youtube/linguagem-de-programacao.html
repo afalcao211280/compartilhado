@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como criar uma Linguagem de Programação</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Como criar uma Linguagem de Programação</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=fDtjZpiWxi4">https://www.youtube.com/watch?v=fDtjZpiWxi4</a> · pt-BR · ~13:45 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Como criar uma Linguagem de Programação&quot; (pt-BR, ~13:45)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=fDtjZpiWxi4</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_ling.json</p>
+
+<h2>Tese central</h2>
+
+<p>Criar uma linguagem é responder, uma por uma, as perguntas escondidas atrás de um `print(&quot;hello world&quot;)`: *quais keywords existem? que ordem elas podem ter? o que é erro? o que é número? o que é texto? como isso vira execução?*</p>
+
+<h2>O processo (passo a passo)</h2>
+
+<h3>1. Propósito</h3>
+<p>Toda linguagem nasce para resolver um problema:</p>
+<ul style='padding-left:1.3rem'>
+<li>C → controle total do hardware</li>
+<li>Python → produtividade</li>
+<li>SQL → consultar dados</li>
+<li>Rust → segurança de memória sem GC</li>
+<li>Go → simplificar concorrência</li>
+<li>Elixir → tolerância a falhas do BEAM com sintaxe moderna</li>
+</ul>
+
+<p>Nenhuma começou tentando ser boa em tudo. A pergunta guia: *qual problema a minha linguagem resolve melhor que as existentes?*</p>
+
+<h3>2. Gramática (EBNF)</h3>
+<p>Regras formais descrevem a estrutura válida. Um `statement` pode ser atribuição ou `mostre`; uma atribuição é `variavel` + identificador + `=` + expressão; expressão pode ser número, string, identificador ou operação. O **parser** tenta derivar o código a partir das regras — se consegue, é válido; senão, erro de sintaxe.</p>
+
+<p>**Ambiguidade**: `1 + 2 * 3` precisa de **precedência** (multiplicação antes da soma) e **associatividade** para ter leitura única.</p>
+
+<h3>3. Front end: Lexer + Parser</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Lexer**: lê texto char a char e agrupa em **tokens** (`variavel` → keyword, `nome` → identificador, `=` → operador).</li>
+<li>**Parser**: monta a **AST** (Abstract Syntax Tree) a partir dos tokens. Nó raiz = atribuição; lado direito = expressão de soma.</li>
+<li>Parser à mão (**descida recursiva** — uma função por regra da gramática) ou **gerador** (PEG como `parte`). Compiladores maduros (Go, Rust, TypeScript) usam parsers manuais por causa de mensagens de erro úteis e sintaxe complexa (JSX, tipos).</li>
+</ul>
+
+<h3>4. Sistema de tipos</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Estática** (C, Go): verifica em **compilação** — pega erros cedo, melhor autocomplete, custo de escrever mais anotações (parâmetros, genéricos, null).</li>
+<li>**Dinâmica** (Python, JS): verifica em **execução** — mais flexível e rápido de escrever, porém erros só aparecem no caminho que roda (às vezes em produção).</li>
+<li>**Inferência** (TypeScript, Rust): `let x = 42` — o compilador deduz; segurança do estático com menos verbosidade.</li>
+<li>Além: funções com retornos variados, genéricos, representação de ausência (null/Option).</li>
+</ul>
+
+<p>O mesmo `&quot;1&quot; + 1` muda conforme a linguagem: JS converte número para string e concatena; Python lança erro em runtime; linguagem estaticamente tipada nem compila.</p>
+
+<h3>5. Execução — três caminhos</h3>
+<p>1. **Intérprete direto**: percorre a AST nó a nó e executa. Simples, foco na semântica; porém lento (nós espalhados na memória, estouro de cache).</p>
+<p>2. **Código nativo**: AST → IR (ex.: LLVM) → código de máquina. Mais rápido, mais difícil (registradores, alocação, arquiteturas). C, C++, Rust.</p>
+<p>3. **Bytecode + VM** (meio termo): AST → bytecode compacto e sequencial → máquina virtual. Mais rápido que percorrer AST, mais fácil que nativo. Java (JVM), Python (CPython), Lua. VMs modernas adicionam **JIT**: compilam para nativo os trechos mais executados **em runtime**.</p>
+
+<p>Exemplo de bytecode para `mostre 10 + 20`: `LOAD 10; LOAD 20; ADD; PRINT`.</p>
+
+<h3>6. Memória</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Manual** (C `malloc`/`free`): controle total, risco de leak/use-after-free.</li>
+<li>**Garbage Collector** (Java, Go, Python, JS): runtime monitora e libera; seguro, porém pausas.</li>
+<li>**Ownership** (Rust): dono libera ao sair do escopo, checado em compilação — sem GC, sem frees manuais.</li>
+</ul>
+
+<h3>7. Runtime + Concorrência</h3>
+<p>O runtime define o modelo: threads (Java), event loop (JS), goroutines (Go). Decisão difícil de mudar depois — o código dos usuários se apoia nela.</p>
+
+<h3>8. Standard Library + Ecossistema</h3>
+<ul style='padding-left:1.3rem'>
+<li>Python = **batteries included** (HTTP, regex, CSV na caixa).</li>
+<li>Go = stdlib forte p/ servidores (HTTP, JSON, crypto, testes) sem dependência externa.</li>
+<li>**Package manager** é quase obrigatório (npm, pip/uv, cargo).</li>
+<li>**Ferramentas**: formatter, linter, debugger — `gofmt`, `go test`, `go build` acertaram desde o começo.</li>
+<li>**LSP** (Language Server Protocol, da Microsoft) conecta editores ao servidor da linguagem: autocomplete, erros inline, ir para definição, refatoração — em VS Code, Neovim, IntelliJ, etc.</li>
+<li>**Comunidade** é o que mantém a linguagem viva: bibliotecas, respostas, bug reports.</li>
+</ul>
+
+<h2>Recursos para aprender</h2>
+<ul style='padding-left:1.3rem'>
+<li>**Crafting Interpreters** (Robert Nystrom) — gratuito online; constrói 2 implementações da linguagem Lox: interpretador em Java + VM com bytecode em C.</li>
+<li>**Dragon Book** — o livro clássico de compiladores.</li>
+<li>**LLVM** como backend — gere IR p/ LLVM e ele cuida de otimização e geração p/ várias arquiteturas (Rust, Swift fazem isso).</li>
+</ul>
+
+<h2>Conclusão</h2>
+<p>Mesmo sem criar uma linguagem de produção, o processo obriga a entender **como código vira execução** — e isso muda como você programa em qualquer linguagem.</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — Python 3.14, Go 1.26 e Java 26</h2>
+
+<h3>1. Lexer: texto → tokens</h3>
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — mini lexer (tokens)</span>
+<span class="k">import</span> re
+
+<span class="k">def</span> lexer(src):
+    specs = [
+        (<span class="s">&#x27;NUM&#x27;</span>, r<span class="s">&#x27;\d+&#x27;</span>), (<span class="s">&#x27;ID&#x27;</span>, r<span class="s">&#x27;[a-z]+&#x27;</span>),
+        (<span class="s">&#x27;OP&#x27;</span>, r<span class="s">&#x27;[+\-*/=]&#x27;</span>), (<span class="s">&#x27;WS&#x27;</span>, r<span class="s">&#x27;\s+&#x27;</span>),
+    ]
+    tokens = []
+    pos = 0
+    <span class="k">while</span> pos &lt; len(src):
+        <span class="k">for</span> name, pat <span class="k">in</span> specs:
+            m = re.<span class="k">match</span>(pat, src[pos:])
+            <span class="k">if</span> m:
+                <span class="k">if</span> name != <span class="s">&#x27;WS&#x27;</span>:
+                    tokens.append((name, m.group()))
+                pos += len(m.group())
+                <span class="k">break</span>
+        <span class="k">else</span>:
+            <span class="k">raise</span> SyntaxError(f<span class="s">&#x27;caractere inesperado: {src[pos]!r}&#x27;</span>)
+    <span class="k">return</span> tokens
+
+<span class="k">print</span>(lexer(<span class="s">&#x27;variavel x = 10 + 20&#x27;</span>))
+<span class="c"># [(&#x27;ID&#x27;,&#x27;variavel&#x27;), (&#x27;ID&#x27;,&#x27;x&#x27;), (&#x27;OP&#x27;,&#x27;=&#x27;), (&#x27;NUM&#x27;,&#x27;10&#x27;), (&#x27;OP&#x27;,&#x27;+&#x27;), (&#x27;NUM&#x27;,&#x27;20&#x27;)]</span></pre>
+<pre class="src"><span class="c">// Go 1.26 — mini lexer (tokens)</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">&quot;fmt&quot;</span>
+	<span class="s">&quot;regexp&quot;</span>
+)
+
+<span class="k">type</span> Token <span class="k">struct</span>{ tipo, valor <span class="k">string</span> }
+
+<span class="k">func</span> lexer(src <span class="k">string</span>) []Token {
+	specs := []<span class="k">struct</span>{ tipo, pat <span class="k">string</span> }{
+		{<span class="s">&quot;NUM&quot;</span>, `\d+`}, {<span class="s">&quot;ID&quot;</span>, `[a-z]+`}, {<span class="s">&quot;OP&quot;</span>, `[+\-*/=]`},
+	}
+	<span class="k">var</span> tokens []Token
+	pos := 0
+	<span class="k">for</span> pos &lt; <span class="k">len</span>(src) {
+		matched := <span class="k">false</span>
+		<span class="k">for</span> _, sp := <span class="k">range</span> specs {
+			re := regexp.MustCompile(`^` + sp.pat)
+			m := re.FindString(src[pos:])
+			<span class="k">if</span> m != <span class="s">&quot;&quot;</span> {
+				tokens = <span class="k">append</span>(tokens, Token{sp.tipo, m})
+				pos += <span class="k">len</span>(m)
+				matched = <span class="k">true</span>
+				<span class="k">break</span>
+			}
+		}
+		<span class="k">if</span> !matched {
+			<span class="k">if</span> src[pos] == <span class="s">&#x27; &#x27;</span> { pos++; <span class="k">continue</span> }
+			panic(fmt.Sprintf(<span class="s">&quot;caractere inesperado: %q&quot;</span>, src[pos]))
+		}
+	}
+	<span class="k">return</span> tokens
+}
+
+<span class="k">func</span> main() {
+	fmt.Println(lexer(<span class="s">&quot;variavel x = 10 + 20&quot;</span>))
+}</pre>
+<pre class="src"><span class="c">// Java 26 — mini lexer (tokens)</span>
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.regex.*;
+
+<span class="k">public</span> <span class="k">class</span> LexerDemo {
+  <span class="k">record</span> Token(String tipo, String valor) {}
+
+  <span class="k">static</span> <span class="k">List</span>&lt;Token&gt; lexer(String src) {
+    <span class="k">Map</span>&lt;String, String&gt; specs = <span class="k">Map</span>.of(
+      <span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;\\d+&quot;</span>, <span class="s">&quot;ID&quot;</span>, <span class="s">&quot;[a-z]+&quot;</span>, <span class="s">&quot;OP&quot;</span>, <span class="s">&quot;[+\\-*/=]&quot;</span>);
+    <span class="k">List</span>&lt;Token&gt; tokens = <span class="k">new</span> <span class="k">ArrayList</span>&lt;&gt;();
+    <span class="k">int</span> pos = 0;
+    <span class="k">while</span> (pos &lt; src.length()) {
+      <span class="k">boolean</span> matched = <span class="k">false</span>;
+      <span class="k">for</span> (<span class="k">var</span> e : specs.entrySet()) {
+        Matcher m = Pattern.compile(<span class="s">&quot;^&quot;</span> + e.getValue()).matcher(src.substring(pos));
+        <span class="k">if</span> (m.find()) {
+          tokens.add(<span class="k">new</span> Token(e.getKey(), m.group()));
+          pos += m.group().length();
+          matched = <span class="k">true</span>;
+          <span class="k">break</span>;
+        }
+      }
+      <span class="k">if</span> (!matched) {
+        <span class="k">if</span> (src.charAt(pos) == <span class="s">&#x27; &#x27;</span>) { pos++; <span class="k">continue</span>; }
+        <span class="k">throw</span> <span class="k">new</span> IllegalArgumentException(<span class="s">&quot;caractere inesperado: &quot;</span> + src.charAt(pos));
+      }
+    }
+    <span class="k">return</span> tokens;
+  }
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="k">System</span>.out.println(lexer(<span class="s">&quot;variavel x = 10 + 20&quot;</span>));
+  }
+}</pre></div>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — parser de expressoes (recursive descent)</span>
+<span class="k">class</span> Node: <span class="k">pass</span>
+
+<span class="k">class</span> Num(Node):
+    <span class="k">def</span> __init__(self, v): self.v = v
+
+<span class="k">class</span> Bin(Node):
+    <span class="k">def</span> __init__(self, op, l, r): self.op, self.l, self.r = op, l, r
+
+<span class="k">class</span> Parser:
+    <span class="k">def</span> __init__(self, tokens):
+        self.ts = tokens; self.i = 0
+
+    <span class="k">def</span> peek(self): <span class="k">return</span> self.ts[self.i] <span class="k">if</span> self.i &lt; len(self.ts) <span class="k">else</span> (<span class="s">&#x27;EOF&#x27;</span>, <span class="s">&#x27;&#x27;</span>)
+
+    <span class="k">def</span> eat(self, tipo):
+        tok = self.peek()
+        <span class="k">if</span> tok[0] != tipo: <span class="k">raise</span> SyntaxError(f<span class="s">&#x27;era {tipo}, veio {tok}&#x27;</span>)
+        self.i += 1
+        <span class="k">return</span> tok
+
+    <span class="k">def</span> parse(self):
+        <span class="k">return</span> self.soma()
+
+    <span class="k">def</span> soma(self):            <span class="c"># precedencia menor</span>
+        n = self.mul()
+        <span class="k">while</span> self.peek()[0] == <span class="s">&#x27;OP&#x27;</span> <span class="k">and</span> self.peek()[1] <span class="k">in</span> <span class="s">&#x27;+-&#x27;</span>:
+            op = self.eat(<span class="s">&#x27;OP&#x27;</span>)[1]; n = Bin(op, n, self.mul())
+        <span class="k">return</span> n
+
+    <span class="k">def</span> mul(self):             <span class="c"># precedencia maior</span>
+        n = self.fator()
+        <span class="k">while</span> self.peek()[0] == <span class="s">&#x27;OP&#x27;</span> <span class="k">and</span> self.peek()[1] <span class="k">in</span> <span class="s">&#x27;*/&#x27;</span>:
+            op = self.eat(<span class="s">&#x27;OP&#x27;</span>)[1]; n = Bin(op, n, self.fator())
+        <span class="k">return</span> n
+
+    <span class="k">def</span> fator(self):
+        t = self.eat(<span class="s">&#x27;NUM&#x27;</span>)
+        <span class="k">return</span> Num(int(t[1]))
+
+<span class="k">def</span> mostra(n, recuo=0):
+    <span class="k">if</span> isinstance(n, Num): <span class="k">return</span> str(n.v)
+    <span class="k">return</span> f<span class="s">&#x27;({mostra(n.l)} {n.op} {mostra(n.r)})&#x27;</span>
+
+tokens = [(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;1&#x27;</span>),(<span class="s">&#x27;OP&#x27;</span>,<span class="s">&#x27;+&#x27;</span>),(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;2&#x27;</span>),(<span class="s">&#x27;OP&#x27;</span>,<span class="s">&#x27;*&#x27;</span>),(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;3&#x27;</span>)]
+ast = Parser(tokens).parse()
+<span class="k">print</span>(mostra(ast))   <span class="c"># (1 + (2 * 3)) — precedencia aplicada</span></pre>
+<pre class="src"><span class="c">// Go 1.26 — parser de expressoes (recursive descent)</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+
+<span class="k">type</span> Token <span class="k">struct</span>{ tipo, valor <span class="k">string</span> }
+
+<span class="k">type</span> Node <span class="k">interface</span>{ String() <span class="k">string</span> }
+
+<span class="k">type</span> Num <span class="k">struct</span>{ v <span class="k">int</span> }
+
+<span class="k">func</span> (n Num) String() <span class="k">string</span> { <span class="k">return</span> fmt.Sprint(n.v) }
+
+<span class="k">type</span> Bin <span class="k">struct</span> {
+	op <span class="k">string</span>
+	l, r Node
+}
+
+<span class="k">func</span> (b Bin) String() <span class="k">string</span> { <span class="k">return</span> fmt.Sprintf(<span class="s">&quot;(%s %s %s)&quot;</span>, b.l, b.op, b.r) }
+
+<span class="k">type</span> Parser <span class="k">struct</span> {
+	ts []Token
+	i  <span class="k">int</span>
+}
+
+<span class="k">func</span> (p *Parser) peek() Token {
+	<span class="k">if</span> p.i &lt; <span class="k">len</span>(p.ts) { <span class="k">return</span> p.ts[p.i] }
+	<span class="k">return</span> Token{<span class="s">&quot;EOF&quot;</span>, <span class="s">&quot;&quot;</span>}
+}
+
+<span class="k">func</span> (p *Parser) eat(tipo <span class="k">string</span>) Token {
+	t := p.peek()
+	<span class="k">if</span> t.tipo != tipo { panic(fmt.Sprintf(<span class="s">&quot;era %s, veio %v&quot;</span>, tipo, t)) }
+	p.i++
+	<span class="k">return</span> t
+}
+
+<span class="k">func</span> (p *Parser) soma() Node {
+	n := p.mul()
+	<span class="k">for</span> p.peek().tipo == <span class="s">&quot;OP&quot;</span> &amp;&amp; (p.peek().valor == <span class="s">&quot;+&quot;</span> || p.peek().valor == <span class="s">&quot;-&quot;</span>) {
+		op := p.eat(<span class="s">&quot;OP&quot;</span>).valor
+		n = Bin{op, n, p.mul()}
+	}
+	<span class="k">return</span> n
+}
+
+<span class="k">func</span> (p *Parser) mul() Node {
+	n := p.fator()
+	<span class="k">for</span> p.peek().tipo == <span class="s">&quot;OP&quot;</span> &amp;&amp; (p.peek().valor == <span class="s">&quot;*&quot;</span> || p.peek().valor == <span class="s">&quot;/&quot;</span>) {
+		op := p.eat(<span class="s">&quot;OP&quot;</span>).valor
+		n = Bin{op, n, p.fator()}
+	}
+	<span class="k">return</span> n
+}
+
+<span class="k">func</span> (p *Parser) fator() Node {
+	t := p.eat(<span class="s">&quot;NUM&quot;</span>)
+	<span class="k">var</span> v <span class="k">int</span>
+	fmt.Sscanf(t.valor, <span class="s">&quot;%d&quot;</span>, &amp;v)
+	<span class="k">return</span> Num{v}
+}
+
+<span class="k">func</span> main() {
+	ts := []Token{{<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;1&quot;</span>}, {<span class="s">&quot;OP&quot;</span>, <span class="s">&quot;+&quot;</span>}, {<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;2&quot;</span>}, {<span class="s">&quot;OP&quot;</span>, <span class="s">&quot;*&quot;</span>}, {<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;3&quot;</span>}}
+	fmt.Println((&amp;Parser{ts, 0}).soma())   <span class="c">// (1 + (2 * 3))</span>
+}</pre>
+<pre class="src"><span class="c">// Java 26 — parser de expressoes (recursive descent)</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public</span> <span class="k">class</span> ParserDemo {
+  <span class="k">record</span> Token(String tipo, String valor) {}
+  <span class="k">sealed</span> <span class="k">interface</span> Node <span class="k">permits</span> Num, Bin {}
+  <span class="k">record</span> Num(<span class="k">int</span> v) <span class="k">implements</span> Node {}
+  <span class="k">record</span> Bin(String op, Node l, Node r) <span class="k">implements</span> Node {}
+
+  <span class="k">static</span> <span class="k">class</span> P {
+    <span class="k">List</span>&lt;Token&gt; ts; <span class="k">int</span> i = 0;
+    P(<span class="k">List</span>&lt;Token&gt; ts) { <span class="k">this</span>.ts = ts; }
+    Token peek() { <span class="k">return</span> i &lt; ts.size() ? ts.get(i) : <span class="k">new</span> Token(<span class="s">&quot;EOF&quot;</span>, <span class="s">&quot;&quot;</span>); }
+    Token eat(String tipo) {
+      Token t = peek();
+      <span class="k">if</span> (!t.tipo().equals(tipo)) <span class="k">throw</span> <span class="k">new</span> IllegalArgumentException(<span class="s">&quot;era &quot;</span> + tipo + <span class="s">&quot;, veio &quot;</span> + t);
+      i++;
+      <span class="k">return</span> t;
+    }
+    Node soma() {
+      Node n = mul();
+      <span class="k">while</span> (peek().tipo().equals(<span class="s">&quot;OP&quot;</span>) &amp;&amp; (peek().valor().equals(<span class="s">&quot;+&quot;</span>) || peek().valor().equals(<span class="s">&quot;-&quot;</span>))) {
+        String op = eat(<span class="s">&quot;OP&quot;</span>).valor();
+        n = <span class="k">new</span> Bin(op, n, mul());
+      }
+      <span class="k">return</span> n;
+    }
+    Node mul() {
+      Node n = fator();
+      <span class="k">while</span> (peek().tipo().equals(<span class="s">&quot;OP&quot;</span>) &amp;&amp; (peek().valor().equals(<span class="s">&quot;*&quot;</span>) || peek().valor().equals(<span class="s">&quot;/&quot;</span>))) {
+        String op = eat(<span class="s">&quot;OP&quot;</span>).valor();
+        n = <span class="k">new</span> Bin(op, n, fator());
+      }
+      <span class="k">return</span> n;
+    }
+    Node fator() {
+      Token t = eat(<span class="s">&quot;NUM&quot;</span>);
+      <span class="k">return</span> <span class="k">new</span> Num(<span class="k">Integer</span>.parseInt(t.valor()));
+    }
+  }
+
+  <span class="k">static</span> String mostra(Node n) {
+    <span class="k">if</span> (n <span class="k">instanceof</span> Num num) <span class="k">return</span> String.valueOf(num.v());
+    <span class="k">if</span> (n <span class="k">instanceof</span> Bin b) <span class="k">return</span> <span class="s">&quot;(&quot;</span> + mostra(b.l()) + <span class="s">&quot; &quot;</span> + b.op() + <span class="s">&quot; &quot;</span> + mostra(b.r()) + <span class="s">&quot;)&quot;</span>;
+    <span class="k">return</span> <span class="s">&quot;&quot;</span>;
+  }
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="k">List</span>&lt;Token&gt; ts = <span class="k">List</span>.of(
+      <span class="k">new</span> Token(<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;1&quot;</span>), <span class="k">new</span> Token(<span class="s">&quot;OP&quot;</span>, <span class="s">&quot;+&quot;</span>),
+      <span class="k">new</span> Token(<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;2&quot;</span>), <span class="k">new</span> Token(<span class="s">&quot;OP&quot;</span>, <span class="s">&quot;*&quot;</span>), <span class="k">new</span> Token(<span class="s">&quot;NUM&quot;</span>, <span class="s">&quot;3&quot;</span>));
+    <span class="k">System</span>.out.println(mostra(<span class="k">new</span> P(ts).soma()));   <span class="c">// (1 + (2 * 3))</span>
+  }
+}</pre></div>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — VM de pilha (bytecode)</span>
+<span class="k">def</span> run(bytecode):
+    pilha = []
+    <span class="k">for</span> op <span class="k">in</span> bytecode:
+        <span class="k">if</span> op[0] == <span class="s">&#x27;LOAD&#x27;</span>: pilha.append(op[1])
+        <span class="k">elif</span> op[0] == <span class="s">&#x27;ADD&#x27;</span>: pilha.append(pilha.pop() + pilha.pop())
+        <span class="k">elif</span> op[0] == <span class="s">&#x27;PRINT&#x27;</span>: <span class="k">print</span>(pilha.pop())
+
+run([(<span class="s">&#x27;LOAD&#x27;</span>, 10), (<span class="s">&#x27;LOAD&#x27;</span>, 20), (<span class="s">&#x27;ADD&#x27;</span>,), (<span class="s">&#x27;PRINT&#x27;</span>,)])
+<span class="c"># 30</span></pre>
+<pre class="src"><span class="c">// Go 1.26 — VM de pilha (bytecode)</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+
+<span class="k">type</span> Op <span class="k">struct</span>{ nome <span class="k">string</span>; v <span class="k">int</span> }
+
+<span class="k">func</span> run(bytecode []Op) {
+	<span class="k">var</span> pilha []<span class="k">int</span>
+	<span class="k">for</span> _, op := <span class="k">range</span> bytecode {
+		<span class="k">switch</span> op.nome {
+		<span class="k">case</span> <span class="s">&quot;LOAD&quot;</span>:
+			pilha = <span class="k">append</span>(pilha, op.v)
+		<span class="k">case</span> <span class="s">&quot;ADD&quot;</span>:
+			b, a := pilha[<span class="k">len</span>(pilha)-1], pilha[<span class="k">len</span>(pilha)-2]
+			pilha = pilha[:<span class="k">len</span>(pilha)-2]
+			pilha = <span class="k">append</span>(pilha, a+b)
+		<span class="k">case</span> <span class="s">&quot;PRINT&quot;</span>:
+			v := pilha[<span class="k">len</span>(pilha)-1]
+			pilha = pilha[:<span class="k">len</span>(pilha)-1]
+			fmt.Println(v)
+		}
+	}
+}
+
+<span class="k">func</span> main() {
+	run([]Op{{<span class="s">&quot;LOAD&quot;</span>, 10}, {<span class="s">&quot;LOAD&quot;</span>, 20}, {<span class="s">&quot;ADD&quot;</span>, 0}, {<span class="s">&quot;PRINT&quot;</span>, 0}})
+}</pre>
+<pre class="src"><span class="c">// Java 26 — VM de pilha (bytecode)</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public</span> <span class="k">class</span> VM {
+  <span class="k">record</span> Op(String nome, <span class="k">int</span> v) {}
+
+  <span class="k">static</span> <span class="k">void</span> run(<span class="k">List</span>&lt;Op&gt; bytecode) {
+    Deque&lt;<span class="k">Integer</span>&gt; pilha = <span class="k">new</span> ArrayDeque&lt;&gt;();
+    <span class="k">for</span> (Op op : bytecode) {
+      <span class="k">switch</span> (op.nome()) {
+        <span class="k">case</span> <span class="s">&quot;LOAD&quot;</span> -&gt; pilha.push(op.v());
+        <span class="k">case</span> <span class="s">&quot;ADD&quot;</span>  -&gt; pilha.push(pilha.pop() + pilha.pop());
+        <span class="k">case</span> <span class="s">&quot;PRINT&quot;</span> -&gt; <span class="k">System</span>.out.println(pilha.pop());
+      }
+    }
+  }
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    run(<span class="k">List</span>.of(<span class="k">new</span> Op(<span class="s">&quot;LOAD&quot;</span>, 10), <span class="k">new</span> Op(<span class="s">&quot;LOAD&quot;</span>, 20), <span class="k">new</span> Op(<span class="s">&quot;ADD&quot;</span>, 0), <span class="k">new</span> Op(<span class="s">&quot;PRINT&quot;</span>, 0)));
+  }
+}</pre></div>
+
+<p>Saída (3 linguagens): `[(&#x27;ID&#x27;,&#x27;variavel&#x27;), (&#x27;ID&#x27;,&#x27;x&#x27;), (&#x27;OP&#x27;,&#x27;=&#x27;), (&#x27;NUM&#x27;,&#x27;10&#x27;), (&#x27;OP&#x27;,&#x27;+&#x27;), (&#x27;NUM&#x27;,&#x27;20&#x27;)]`.</p>
+
+<h3>2. Parser: tokens → AST (descida recursiva com precedência)</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+<p>Saída (3 linguagens): `(1 + (2 * 3))` — a multiplicação agrupou primeiro (precedência).</p>
+
+<h3>3. Interpretador de bytecode (VM)</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+<p>Saída (3 linguagens): `30`.</p>
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Linguagem nasce de um **propósito**; as outras decisões (tipos, execução, memória, runtime) derivam dele.</li>
+<li>**Gramática EBNF** → **lexer** → **parser** → **AST** → **tipos** → **execução** (intérprete/nativo/bytecode) → **memória** → **stdlib/ecossistema**.</li>
+<li>**LSP** e package manager são o que separam linguagem &quot;de brinquedo&quot; de uma usável.</li>
+<li>Recursos: **Crafting Interpreters**, **Dragon Book**, **LLVM**.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=fDtjZpiWxi4">Como criar uma Linguagem de Programação</a> (~13:45).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

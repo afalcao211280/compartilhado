@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Escalabilidade</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Design — Escalabilidade</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=Xiod8w7QtQ4">https://www.youtube.com/watch?v=Xiod8w7QtQ4</a> · pt-BR · ~11 · 30/08/2026</p>
+
+<h1>Resumo — &quot;System Design: Escalabilidade&quot; (pt-BR, ~11:37)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=Xiod8w7QtQ4</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_sd2.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Escalabilidade é a arte de fazer seu sistema crescer de forma sustentável — mais usuários, mais dados, mais requisições — **sem o usuário final perceber**.</p>
+
+<p>O cenário ideal é escala **linear** (carga dobra → recursos dobram → performance mantida). O mundo real tem gargalos, contenção, limites físicos e de orçamento.</p>
+
+<h2>Duas estratégias fundamentais</h2>
+
+<h3>Escalabilidade vertical (escalar para cima)</h3>
+<p>Tornar o servidor mais potente: mais CPU, RAM, disco, rede.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Vantagens**: simples — não muda código nem arquitetura; um servidor só, sem complexidade de distribuição.</li>
+<li>**Problemas**:</li>
+</ul>
+<p>  1. **Custo não linear**: 2× a capacidade pode custar 3–4×; 4× pode custar 10×.</p>
+<p>  2. **Teto físico**: o maior servidor do mundo ainda é uma máquina; não existe CPU com 1000 cores nem RAM infinita.</p>
+<p>  3. **Ponto único de falha**: se cair, tudo cai até reiniciar.</p>
+
+<h3>Escalabilidade horizontal (escalar para o lado)</h3>
+<p>Usar vários servidores normais e dividir a carga. 10.000 req/s → 10 servidores de 1.000 req/s.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Vantagens**: sem limite teórico (adiciona servidores quase infinitamente); custo linear e previsível; tolerância a falhas (se um cai, os outros continuam).</li>
+<li>**Desvantagens**: complexidade — precisa de **load balancer**, garantir que qualquer servidor atenda qualquer requisição, e sincronizar dados (aí cai no **teorema CAP**).</li>
+</ul>
+
+<p>**Regra geral**: vertical é simples mas limitado; horizontal é quase ilimitado mas complexo. A maioria dos grandes sistemas usa horizontal conforme a carga cresce.</p>
+
+<h2>Load Balancer: o maestro</h2>
+
+<p>O LB decide qual servidor recebe cada requisição. Algoritmos:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Round robin**: alterna 1 → 2 → 3 → 1...</li>
+<li>**Least connections**: manda para o servidor com menos conexões ativas.</li>
+<li>**IP hash**: mesmo IP sempre vai para o mesmo servidor.</li>
+</ul>
+
+<h3>Health checks</h3>
+<p>O LB fica pingando os servidores; se um não responde, é **removido** da lista; quando volta, é **re-adicionado**.</p>
+
+<h3>L4 vs L7 (camadas do OSI)</h3>
+<ul style='padding-left:1.3rem'>
+<li>**L4** (transporte): enxerga só IP e porta. Não sabe se é HTTP ou websocket. **Rápido** (não abre o pacote).</li>
+<li>**L7** (aplicação): entende HTTP — roteia por URL, header, cookie (API → servidor A, estático → servidor B). **Mais lento, mais flexível**.</li>
+</ul>
+
+<p>Ferramentas: Nginx, HAProxy, AWS ALB/ELB, Cloudflare.</p>
+
+<h2>Stateless: a regra de ouro</h2>
+
+<p>Um servidor **stateful** guarda a sessão em memória → a próxima requisição do mesmo usuário precisa ir para o mesmo servidor. Se o LB manda para outro, é como se o usuário não tivesse logado; se o servidor cai, as sessões somem.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Sticky sessions** (afinidade de sessão): o LB sempre manda o mesmo usuário para o mesmo servidor. Funciona, mas perde a distribuição de carga — um servidor pode ficar sobrecarregado enquanto outros ociosos.</li>
+<li>**A solução de verdade é stateless**: o servidor não guarda nada em memória. Sessão → Redis. Arquivos → S3. Dados → banco. O servidor vira **descartável** — pode cair e reviver sem perder nada.</li>
+</ul>
+
+<p>&gt; **Se você quer escalar horizontalmente, seu servidor precisa ser stateless.**</p>
+
+<h2>As três camadas de um sistema web</h2>
+
+<p>1. **Camada web** (estáticos: HTML, CSS, JS, imagens) → escala fácil com **CDN** (cópia global do conteúdo; usuário serve do servidor mais próximo fisicamente). CDN é um &quot;cache global&quot;.</p>
+<p>2. **Camada de aplicação** (lógica, APIs) → escala horizontal com **load balancer** + **stateless** + **auto scaling** (sobe instâncias quando a carga aumenta — ex.: Black Friday — e derruba as ociosas quando diminui).</p>
+<p>3. **Camada de dados** → a mais complexa: banco é **stateful por natureza** (é o próprio estado). Estratégias: **replicação** (cópias para leitura) e **sharding** (divisão em vários bancos) — assunto de outro vídeo.</p>
+
+<p>&gt; Na maioria dos sistemas, **o banco é o gargalo**. A aplicação escala fácil; o banco não. Por isso **cache é tão importante**: quanto menos você bater no banco, melhor.</p>
+
+<h2>Quando escalar?</h2>
+
+<p>Métricas para acompanhar:</p>
+<ul style='padding-left:1.3rem'>
+<li>Latência subindo (100 ms → 500 ms).</li>
+<li>CPU constantemente &gt; 70% sem folga para picos.</li>
+<li>Memória no limite, swap sendo usado.</li>
+<li>Fila de requisições crescendo.</li>
+</ul>
+
+<p>Abordagens:</p>
+<ul style='padding-left:1.3rem'>
+<li>**Reativa**: esperar quase quebrar para consertar — mais barato, mais arriscado.</li>
+<li>**Preventiva**: monitorar e escalar antes do problema — mais caro, mais seguro.</li>
+<li>**Ideal**: automatizar com **auto scaling** — ex.: CPU &gt; 70% por 5 min → adiciona servidor; CPU &lt; 30% por 10 min → remove.</li>
+</ul>
+
+<p>⚠️ **Identifique o gargalo antes de escalar**: não adianta adicionar servidores de aplicação se o banco trava; não adianta otimizar código se o problema é rede.</p>
+
+<h2>Decisões práticas</h2>
+
+<p>1. **Comece vertical** — simples, funciona, barato no início. Só vá para horizontal quando vertical não der mais conta ou custar demais.</p>
+<p>2. **Faça a aplicação stateless desde o começo** — migrar depois é muito pior.</p>
+<p>3. **Cache é seu melhor amigo** — antes de escalar, veja se não dá para cachear.</p>
+<p>4. **Banco é o gargalo** — planeje cedo como escalar os dados.</p>
+<p>5. **Não escale prematuramente** — esteja pronto quando precisar. Arquitetura boa é a que permite escalar sem reescrever tudo.</p>
+
+<h2>Exemplo de código — load balancer round robin (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — round robin + least connections + health check</span>
+<span class="k">class</span> LoadBalancer:
+    <span class="k">def</span> __init__(self, servidores):
+        self.servidores = {s: {<span class="s">&quot;conexoes&quot;</span>: 0, <span class="s">&quot;saudavel&quot;</span>: <span class="k">True</span>} <span class="k">for</span> s <span class="k">in</span> servidores}
+        self.i = 0
+
+    <span class="k">def</span> health_check(self):
+        <span class="c"># simulacao: server B caiu</span>
+        self.servidores[<span class="s">&quot;B&quot;</span>][<span class="s">&quot;saudavel&quot;</span>] = <span class="k">False</span>
+
+    <span class="k">def</span> round_robin(self):
+        ativos = [s <span class="k">for</span> s, v <span class="k">in</span> self.servidores.items() <span class="k">if</span> v[<span class="s">&quot;saudavel&quot;</span>]]
+        <span class="k">if</span> <span class="k">not</span> ativos:
+            <span class="k">return</span> <span class="k">None</span>
+        s = ativos[self.i % len(ativos)]
+        self.i += 1
+        <span class="k">return</span> s
+
+    <span class="k">def</span> least_connections(self):
+        ativos = [s <span class="k">for</span> s, v <span class="k">in</span> self.servidores.items() <span class="k">if</span> v[<span class="s">&quot;saudavel&quot;</span>]]
+        <span class="k">if</span> <span class="k">not</span> ativos:
+            <span class="k">return</span> <span class="k">None</span>
+        <span class="k">return</span> min(ativos, key=<span class="k">lambda</span> s: self.servidores[s][<span class="s">&quot;conexoes&quot;</span>])
+
+lb = LoadBalancer([<span class="s">&quot;A&quot;</span>, <span class="s">&quot;B&quot;</span>, <span class="s">&quot;C&quot;</span>])
+lb.health_check()                 <span class="c"># B sai do pool</span>
+<span class="k">print</span>(<span class="s">&quot;round robin:&quot;</span>, [lb.round_robin() <span class="k">for</span> _ <span class="k">in</span> range(5)])
+<span class="c"># round robin: [&#x27;A&#x27;, &#x27;C&#x27;, &#x27;A&#x27;, &#x27;C&#x27;, &#x27;A&#x27;]  (B removido pelo health check)</span></pre></div>
+
+
+<p>O health check é o que mantém o pool saudável: quando o B deixa de responder, o LB para de mandar tráfego para ele — e quando volta, o LB o re-adiciona automaticamente.</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=Xiod8w7QtQ4">System Design — Escalabilidade</a> (~11).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idempotência em Pagamentos</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Idempotência em Pagamentos</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=RdCrN69IKGQ">https://www.youtube.com/watch?v=RdCrN69IKGQ</a> · pt-BR · ~9:18 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Idempotência em Pagamentos&quot; (pt-BR, ~9:18)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=RdCrN69IKGQ</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_pag.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Você clica em pagar uma vez, o celular manda a requisição, a resposta se perde e o app tenta de novo. Se o backend processar as duas tentativas, **R$ 500 viram R$ 1.000 cobrados**. O mecanismo que evita essa cobrança duplicada chama-se **idempotência**: repetir a mesma operação deixa o sistema com o mesmo efeito de negócio da primeira execução.</p>
+
+<h2>O problema: retries são inevitáveis</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Um **timeout** só diz que o cliente não recebeu resposta a tempo. A cobrança pode ter falhado antes de chegar ao servidor, pode estar em andamento, ou pode ter sido aprovada com a resposta perdida.</li>
+<li>O app **não consegue diferenciar** esses casos olhando o relógio → ele tenta de novo.</li>
+<li>Retries fazem parte de sistemas distribuídos (conexões caem, processos reiniciam). **Filas também podem entregar a mesma mensagem duas vezes.**</li>
+<li>Repetir a entrega pode repetir a cobrança → é exatamente quando a repetição é necessária que o sistema precisa garantir que o **efeito não se repita**.</li>
+</ul>
+
+<h2>Idempotência na prática</h2>
+
+<p>Quando uma operação é idempotente, **três tentativas com a mesma identidade representam uma única cobrança**:</p>
+<ul style='padding-left:1.3rem'>
+<li>Os detalhes técnicos não precisam ser idênticos (uma tentativa pode responder 201, outra devolve a resposta salva — o **saldo e o número de cobranças** continuam iguais).</li>
+</ul>
+
+<h3>Quem carrega o identificador</h3>
+
+<ul style='padding-left:1.3rem'>
+<li>**GET** e **DELETE** já têm semântica idempotente (ler não cria efeito; deletar repetido continua removendo). Mas produtos financeiros criam recursos com **POST** — e o POST ganha idempotência quando o contrato inclui uma **identidade estável para a intenção**: a **idempotency key**.</li>
+<li>O **cliente** conhece a intenção: cria um **identificador único** antes de iniciar as tentativas e manda **a mesma chave** em todas. Se gerasse uma chave nova por tentativa, o servidor veria três operações.</li>
+<li>**Duas ações intencionais = duas chaves**: duas transferências de R$ 100 para a mesma conta são válidas. Deduplicar pelo conteúdo apagaria uma operação legítima.</li>
+</ul>
+
+<h2>O armazenamento (compartilhado e atômico)</h2>
+
+<p>O backend guarda a chave em **armazenamento compartilhado por todas as instâncias** (senão um retry que cai em outra instância passaria batido). A linha de idempotência contém:</p>
+<ul style='padding-left:1.3rem'>
+<li>**Chave** (idempotency key), escopada à conta autenticada — evita que a chave de um cliente bloqueie outro;</li>
+<li>**Request hash** — conteúdo relevante da requisição; detecta a mesma chave reutilizada com outro valor/destinatário;</li>
+<li>**Status** — processando ou concluído;</li>
+<li>**Resposta salva** — devolve o mesmo pagamento sem reexecutar a regra de negócio.</li>
+</ul>
+
+<p>Regras:</p>
+<ul style='padding-left:1.3rem'>
+<li>Chave e hash iguais + operação concluída → devolve o **resultado salvo**.</li>
+<li>Chave igual + conteúdo mudou → **rejeita** (aquela identidade pertence a outra intenção).</li>
+<li>Primeira tentativa ainda rodando → espera um pouco ou informa que continua processando.</li>
+</ul>
+
+<h3>A brecha: check-then-act</h3>
+
+<p>Comparar e depois inserir em duas etapas soltas deixa brecha: duas requisições consultam ao mesmo tempo, descobrem que a chave não existe e **começam duas cobranças**. A disputa pela chave precisa ser **atômica**:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Chave primária**: o banco escolhe uma vencedora. Se o `INSERT` criou a linha, aquela requisição &quot;ganhou&quot; o direito de processar; se nenhuma linha foi criada, outra tentativa já registrou a intenção — consulte o estado existente.</li>
+<li>**Transação + lock**: quando o efeito financeiro mora no mesmo banco, o lançamento e a mudança para `completed` confirmam **na mesma transação**. O banco não deixa uma chave concluída sem lançamento, nem lançamento com a chave aberta.</li>
+</ul>
+
+<h2>Transação ≠ idempotência</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Transação**: impede que a transferência fique pela metade.</li>
+<li>**Idempotência**: impede que a transferência inteira aconteça duas vezes.</li>
+<li>Produtos financeiros precisam **das duas** no mesmo fluxo.</li>
+</ul>
+
+<h2>Webhooks: a duplicação vem de fora</h2>
+
+<p>Provedores e filas podem entregar o mesmo evento mais de uma vez (o receptor processa, mas a confirmação se perde; o provedor vê pendente e reentrega). O consumidor também precisa ser idempotente:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Inbox persistente**: guarda a combinação provedor+evento. O primeiro evento cria o registro e aplica a mudança; entregas seguintes encontram o registro, **não aplicam outro crédito** e respondem sucesso para encerrar o retry.</li>
+<li>Importante em baixa de boleto, liquidação de cartão, recarga de carteira, conciliação.</li>
+</ul>
+
+<h2>Cruzando fronteiras: o caso mais difícil</h2>
+
+<p>Quando a operação cruza mais de um sistema e o processo cai no meio: o processador aprovou a cobrança, mas a API caiu antes de salvar a resposta local. O registro `processing` sozinho **não prova** se o efeito externo aconteceu.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>A mesma identidade precisa **atravessar a fronteira** sempre que o serviço seguinte aceitar uma chave idempotente (backend envia `pagamento 842`, processador responde com a cobrança que já aprovou).</li>
+<li>Se o serviço externo não oferece proteção, guarde uma **referência estável** para consultar e reconciliar antes de tentar criar outro efeito.</li>
+<li>**Outbox** publica o trabalho nascido numa transação local; **inbox** ajuda o próximo serviço a consumir mensagens repetidas. Cada fronteira mantém a identidade da operação mesmo com entrega &quot;pelo menos uma vez&quot;.</li>
+</ul>
+
+<h2>Identidades de negócio reais</h2>
+
+<p>| Produto | Identidade | Protege |</p>
+<p>|---|---|---|</p>
+<p>| Carteira digital | `saque_id` | mesmo pedido de saque não debita duas vezes |</p>
+<p>| Boleto | `emissao_id` | devolve o título já criado, não gera outro documento |</p>
+<p>| Empréstimo | `credito_id` | liga o contrato ao único crédito que entra na conta |</p>
+<p>| Corretora | `client_order_id` | recupera a ordem já enviada à mesa de execução (cancelar/substituir = nova intenção, nova identidade) |</p>
+
+<p>O **tempo de retenção** da chave depende do produto: apagar cedo demais deixa um retry tardio repetir o efeito; guardar para sempre custa caro e complica a operação. A janela precisa cobrir o tempo real de retry, processamento, webhooks e conciliação.</p>
+
+<h2>Testes que valem a pena</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Desabilitar o botão melhora UX, mas **não protege o backend** (o usuário abre duas abas, a biblioteca repete a chamada, um worker reinicia após o efeito).</li>
+<li>A garantia mora **perto da regra de negócio e do armazenamento**.</li>
+<li>Teste útil: **cortar a resposta depois do efeito e antes da confirmação**; disparar duas requisições ao mesmo tempo; duplicar o webhook; reiniciar o worker no ponto crítico.</li>
+<li>Em produção: monitore taxa de chaves repetidas, conflitos de payload, operações presas em `processing`, reconciliações pendentes.</li>
+</ul>
+
+<h2>Conclusão</h2>
+
+<p>&gt; Sistemas confiáveis assumem que a tentativa vai acontecer de novo e dão uma **identidade estável** para o efeito que só pode acontecer uma vez.</p>
+
+<h2>Exemplo de código — idempotency key com insert atômico (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — chave primaria decide a &quot;vencedora&quot; (race-free)</span>
+<span class="k">class</span> Pagamentos:
+    <span class="k">def</span> __init__(self):
+        self.tabela = {}          <span class="c"># chave -&gt; {hash, status, resposta}</span>
+        self.saida = []           <span class="c"># efeitos de negocio aplicados</span>
+
+    <span class="k">def</span> cobrar(self, idem_key, valor, destinatario):
+        request_hash = f<span class="s">&quot;{valor}-{destinatario}&quot;</span>   <span class="c"># conteudo relevante</span>
+        <span class="k">if</span> idem_key <span class="k">in</span> self.tabela:
+            reg = self.tabela[idem_key]
+            <span class="k">if</span> reg[<span class="s">&quot;hash&quot;</span>] != request_hash:
+                <span class="k">return</span> <span class="s">&quot;REJEITADO: chave reutilizada com outro conteudo&quot;</span>
+            <span class="k">return</span> reg[<span class="s">&quot;resposta&quot;</span>]                 <span class="c"># devolve salvo, sem reexecutar</span>
+        <span class="c"># INSERT atomico (na vida real: UNIQUE + catch de conflito)</span>
+        self.tabela[idem_key] = {<span class="s">&quot;hash&quot;</span>: request_hash,
+                                 <span class="s">&quot;status&quot;</span>: <span class="s">&quot;completed&quot;</span>,
+                                 <span class="s">&quot;resposta&quot;</span>: <span class="s">&quot;cobranca aprovada&quot;</span>}
+        self.saida.append(valor)                  <span class="c"># efeito unico</span>
+        <span class="k">return</span> <span class="s">&quot;cobranca aprovada&quot;</span>
+
+p = Pagamentos()
+chave = <span class="s">&quot;9e1c-42&quot;</span>                                 <span class="c"># mesma chave em todos os retries</span>
+<span class="k">print</span>(p.cobrar(chave, 500, <span class="s">&quot;loja&quot;</span>))      <span class="c"># 1a tentativa: processa</span>
+<span class="k">print</span>(p.cobrar(chave, 500, <span class="s">&quot;loja&quot;</span>))      <span class="c"># retry: devolve salvo, SEM debitar 2x</span>
+<span class="k">print</span>(p.cobrar(chave, 999, <span class="s">&quot;outra&quot;</span>))     <span class="c"># mesma chave, conteudo mudou -&gt; rejeita</span>
+<span class="k">print</span>(<span class="s">&quot;total cobrado:&quot;</span>, sum(p.saida))    <span class="c"># 500, nao 1000</span>
+<span class="c"># cobranca aprovada</span>
+<span class="c"># cobranca aprovada</span>
+<span class="c"># REJEITADO: chave reutilizada com outro conteudo</span>
+<span class="c"># total cobrado: 500</span></pre></div>
+
+
+<p>O ponto central: com a chave como **identidade atômica**, o retry não reexecuta a regra de negócio — devolve a resposta salva — e a chave reutilizada com conteúdo diferente é rejeitada. No banco real é a **chave primária/UNIQUE** que garante essa atomicidade contra requisições simultâneas.</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=RdCrN69IKGQ">Idempotência em Pagamentos</a> (~9:18).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

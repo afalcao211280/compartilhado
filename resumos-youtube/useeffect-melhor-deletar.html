@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>useEffect: o Melhor Effect é o que Você Deleta</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>useEffect: o Melhor Effect é o que Você Deleta</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=6rdD4itgDVk">https://www.youtube.com/watch?v=6rdD4itgDVk</a> · pt-BR · ~6:11 · 30/08/2026</p>
+
+<h1>Resumo — &quot;useEffect: o Melhor Effect é o que Você Deleta&quot; (pt-BR, ~6:11)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=6rdD4itgDVk</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_effect.json</p>
+
+<h2>Tese central</h2>
+
+<p>```jsx</p>
+<p>// 11 linhas, 3 useState, 2 useEffect → 3 renderizações por mudança</p>
+<p>function Lista({ itens }) {</p>
+<p>  const [filtrado, setFiltrado] = useState([]);</p>
+<p>  const [total, setTotal] = useState(0);</p>
+<p>  useEffect(() =&gt; setFiltrado(filtrar(itens)), [itens]);  // render 2</p>
+<p>  useEffect(() =&gt; setTotal(totalDe(filtrado)), [filtrado]); // render 3</p>
+<p>  return &lt;div&gt;{filtrado.length}/{total}&lt;/div&gt;;</p>
+<p>}</p>
+<p>```</p>
+<p>vs</p>
+
+<p>```jsx</p>
+<p>// 3 linhas, 1 useState, 0 useEffect → 1 renderização, mesmo resultado</p>
+<p>function Lista({ itens }) {</p>
+<p>  const filtrado = filtrar(itens);       // derivado na renderização</p>
+<p>  const total = totalDe(filtrado);       // derivado</p>
+<p>  return &lt;div&gt;{filtrado.length}/{total}&lt;/div&gt;;</p>
+<p>}</p>
+<p>```</p>
+
+<p>O `useEffect` foi feito para **efeitos colaterais** (fora do React: API, event listeners, timers). Mas a maioria usa para **sincronizar estado** (&quot;quando X mudar, atualiza Y&quot;) — é aí que os bugs aparecem.</p>
+
+<h2>A regra de ouro</h2>
+
+<p>&gt; **Se dá para calcular a partir de estado ou props existentes, não coloque no `useState` — calcule durante a renderização.**</p>
+
+<ul style='padding-left:1.3rem'>
+<li>Derivado na renderização = **impossível ficar inconsistente** (tudo é calculado junto, 1 renderização).</li>
+<li>Effects em cadeia = **efeito dominó**: cada peça depende da anterior, mudar uma quebra todas. Produção tem componentes com 5-6 effects encadeados → 4 renderizações.</li>
+<li>Cálculo pesado? Raramente é problema (filtrar 1000 itens &lt; 1ms). Se for **medido** no profiler, use **`useMemo`** — que calcula na MESMA renderização (não agenda outra, como `useEffect` + `useState`).</li>
+</ul>
+
+<h2>O bug do closure stale</h2>
+
+<p>```jsx</p>
+<p>function Contador() {</p>
+<p>  const [count, setCount] = useState(0);</p>
+<p>  useEffect(() =&gt; {</p>
+<p>    const id = setInterval(() =&gt; setCount(count + 1), 1000); // nunca passa de 1!</p>
+<p>  }, []); // [] captura o count da PRIMEIRA renderização (0), congelado na closure</p>
+<p>}</p>
+<p>```</p>
+<ul style='padding-left:1.3rem'>
+<li>A closure captura **variáveis, não valores**; com array vazio ela vê só as variáveis da 1ª renderização.</li>
+<li>Fix: **updater function** — `setCount(c =&gt; c + 1)` pede ao React o valor mais recente.</li>
+<li>O bug só existe **por causa do effect**: sem effect, closure stale não existe.</li>
+</ul>
+
+<h2>Data fetching no effect: 3 bugs escondidos</h2>
+
+<p>```jsx</p>
+<p>const [user, setUser] = useState(null);</p>
+<p>useEffect(() =&gt; {</p>
+<p>  fetch(`/api/users/${userId}`).then(r =&gt; r.json()).then(setUser);</p>
+<p>}, [userId]);</p>
+<p>```</p>
+<p>1. **Race condition**: muda `userId` rápido as respostas voltam fora de ordem (click em user 2, resposta do user 1 chega por último).</p>
+<p>2. **Vazamento/update em componente desmontado**: desmonta antes da resposta → `setUser` em componente que não existe.</p>
+<p>3. **Estado inconsistente**: entre a mudança de `userId` e a resposta, mostra dados do usuário anterior, sem loading/erro.</p>
+
+<p>Versão &quot;corrigida&quot; com `AbortController` no cleanup: **30 linhas**. E ainda sem retry/cache/loading/erro decente.</p>
+
+<h2>A alternativa: bibliotecas de data fetching</h2>
+
+<p>```jsx</p>
+<p>// TanStack Query — 5 linhas, sem useEffect</p>
+<p>const { data: user, isLoading, error } = useQuery({</p>
+<p>  queryKey: [&#x27;user&#x27;, userId],</p>
+<p>  queryFn: () =&gt; fetch(`/api/users/${userId}`).then(r =&gt; r.json()),</p>
+<p>});</p>
+<p>```</p>
+<p>TanStack Query, SWR, hooks do Next.js/Remix: **race condition, cache, retry, loading, erro e revalidação** tratados. Existem **porque fetch é tão difícil de fazer direito que virou categoria de bug**.</p>
+
+<h2>Usos legítimos do useEffect (efeitos colaterais de verdade)</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Sincronizar com sistemas **externos ao React**: event listeners no `window`/`document`, subscriptions a WebSocket, integração com libs que manipulam DOM, timers/intervalos com cleanup correto, analytics, logout.</li>
+</ul>
+
+<h2>Decisão em 3 perguntas</h2>
+
+<p>| Situação | Solução |</p>
+<p>|---|---|</p>
+<p>| Dá para calcular a partir de estado/props? | **Calcula na renderização** (sem state, sem effect) |</p>
+<p>| É data fetching? | **Biblioteca especializada** (TanStack Query, SWR, Next/Remix hooks) |</p>
+<p>| É efeito colateral externo ao React? | **useEffect** (com cleanup) |</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — simulação de React em Node 24</h2>
+
+<h3>1. Estado derivado vs effects em cadeia (3 renderizações → 1)</h3>
+
+<div class="code2col"><pre class="src">// Node 24 — simulacao <span class="k">do</span> ciclo de render <span class="k">do</span> React
+// Cada useEffect que MEXE no estado agenda outra renderizacao.
+<span class="k">let</span> renderCount;
+
+<span class="k">function</span> simularRender(componente) {
+  <span class="k">const</span> estado = <span class="k">new</span> Map();      // chave -&gt; valor atual
+  <span class="k">const</span> efeitos = [];            // fila de effects a rodar
+  renderCount = 0;
+
+  <span class="k">function</span> useState(init, chave) {
+    <span class="k">if</span> (!estado.has(chave)) estado.set(chave, init);
+    <span class="k">const</span> set = (v) =&gt; estado.set(chave, <span class="k">typeof</span> v === <span class="s">&#x27;function&#x27;</span> ? v(estado.get(chave)) : v);
+    <span class="k">return</span> [estado.get(chave), set];
+  }
+  <span class="k">function</span> useEffect(fn) { efeitos.push(fn); }
+
+  <span class="k">const</span> api = { useState, useEffect };
+  renderCount++;
+  <span class="k">const</span> saida = componente(api);
+  <span class="k">let</span> guarda = 0;
+  <span class="k">while</span> (efeitos.length &amp;&amp; guarda++ &lt; 10) {
+    <span class="k">const</span> antes = JSON.stringify([...estado]);
+    <span class="k">const</span> fn = efeitos.shift();
+    fn();
+    <span class="k">if</span> (JSON.stringify([...estado]) !== antes) {
+      renderCount++;            // effect setou estado -&gt; nova renderizacao
+      componente(api);          // re-render com o estado novo
+    }
+  }
+  <span class="k">return</span> { saida, renderCount };
+}
+
+<span class="k">const</span> filtrar = xs =&gt; xs.filter(x =&gt; x &gt; 1);
+<span class="k">const</span> totalDe = xs =&gt; xs.length;
+
+// versao RUIM: 3 useState + 2 useEffect (estado sincronizado)
+<span class="k">function</span> Ruim({ useState, useEffect }) {
+  <span class="k">const</span> [itens] = useState([3, 1, 2], <span class="s">&#x27;itens&#x27;</span>);
+  <span class="k">const</span> [filtrado, setFiltrado] = useState([], <span class="s">&#x27;filtrado&#x27;</span>);
+  <span class="k">const</span> [total, setTotal] = useState(0, <span class="s">&#x27;total&#x27;</span>);
+  useEffect(() =&gt; setFiltrado(filtrar(itens)));
+  useEffect(() =&gt; setTotal(totalDe(filtrado)));
+  <span class="k">return</span> `${filtrado.length}/${total}`;
+}
+// versao BOA: derivado na renderizacao (sem state, sem effect)
+<span class="k">function</span> Bom({ useState }) {
+  <span class="k">const</span> [itens] = useState([3, 1, 2], <span class="s">&#x27;itens&#x27;</span>);
+  <span class="k">const</span> filtrado = filtrar(itens);
+  <span class="k">const</span> total = totalDe(filtrado);
+  <span class="k">return</span> `${filtrado.length}/${total}`;
+}
+
+<span class="k">const</span> ruim = simularRender(Ruim);
+<span class="k">const</span> bom = simularRender(Bom);
+console.log(<span class="s">&#x27;ruim (effects em cadeia):&#x27;</span>, ruim.renderCount, <span class="s">&#x27;renderizacoes -&gt;&#x27;</span>, ruim.saida);
+console.log(<span class="s">&#x27;bom  (derivado)        :&#x27;</span>, bom.renderCount, <span class="s">&#x27;renderizacao -&gt;&#x27;</span>, bom.saida);
+// ruim (effects em cadeia): 3 renderizacoes -&gt; 0/0
+// bom  (derivado)        : 1 renderizacao -&gt; 2/2
+// (no React real, o filtrado re-renderizaria com 2/1; aqui importa a contagem:
+//  effects em cadeia = 3 renders, derivado = 1 render)</pre>
+<pre class="src">// Node 24 — closure captura variaveis, nao valores
+// simula as <span class="s">&quot;renderizacoes&quot;</span> <span class="k">do</span> React: cada uma cria novas variaveis
+<span class="k">function</span> renderizacao(count, criarClosure) {
+  <span class="k">return</span> criarClosure(count);   // closure criada NESTE escopo
+}
+
+// RUIM: a closure da 1a renderizacao captura count = 0 (array vazio)
+<span class="k">const</span> closureRuim = renderizacao(0, c =&gt; () =&gt; c + 1);   // <span class="s">&quot;useEffect([], ...)&quot;</span>
+<span class="k">let</span> countAtual = 0;
+<span class="k">const</span> closures = [closureRuim];
+// renderizacoes seguintes mudam countAtual, mas a closure antiga ve 0
+countAtual = 10;
+console.log(<span class="s">&#x27;closure stale (1a render):&#x27;</span>, closures[0]());   // 1 — congelada em 0
+
+// BOA: updater <span class="k">function</span> pede o valor mais recente ao React
+<span class="k">function</span> setCountComUpdater(atual, fn) { <span class="k">return</span> fn(atual); }
+console.log(<span class="s">&#x27;com updater (valor atual):&#x27;</span>, setCountComUpdater(10, c =&gt; c + 1));  // 11
+// closure stale (1a render): 1
+// com updater (valor atual): 11</pre>
+<pre class="src">// Node 24 — data fetching: cancelar request antigo (como o AbortController)
+<span class="k">const</span> usuarios = { 1: <span class="s">&#x27;Ana&#x27;</span>, 2: <span class="s">&#x27;Bruno&#x27;</span> };
+
+<span class="k">function</span> buscaUser(userId) {
+  <span class="k">return</span> <span class="k">new</span> Promise((resolve) =&gt; {
+    <span class="k">const</span> t = setTimeout(() =&gt; resolve(usuarios[userId] ?? <span class="s">&#x27;?&#x27;</span>), 30);
+    // no React, o AbortController faria este cleanup
+  });
+}
+
+// simula o useEffect com cleanup: request antigo e descartado
+<span class="k">async</span> <span class="k">function</span> efeitoDeFetch(userId) {
+  <span class="k">const</span> controller = <span class="k">new</span> AbortController();
+  // cleanup <span class="k">do</span> effect (no React): controller.abort() ao trocar userId/desmontar
+  <span class="k">const</span> user = <span class="k">await</span> buscaUser(userId);
+  controller.abort();
+  <span class="k">return</span> user;
+}
+
+// versao <span class="s">&quot;TanStack Query&quot;</span>: pede so o dado que interessa (chave = userId)
+<span class="k">async</span> <span class="k">function</span> queryFetch(userId) {
+  <span class="k">const</span> user = <span class="k">await</span> buscaUser(userId);
+  <span class="k">return</span> user;
+}
+
+(<span class="k">async</span> () =&gt; {
+  // race condition: user 1 responde depois <span class="k">do</span> user 2 (sem abort)
+  <span class="k">const</span> p1 = buscaUser(1);
+  <span class="k">const</span> p2 = buscaUser(2);   // clique rapido: muda pra 2
+  console.log(<span class="s">&#x27;resposta user 2:&#x27;</span>, <span class="k">await</span> p2);   // Bruno (a que vale)
+  console.log(<span class="s">&#x27;resposta user 1:&#x27;</span>, <span class="k">await</span> p1);   // Ana — chega por ultimo!
+  // sem abort/cancelamento, o componente mostraria os dados errados
+
+  // com abort (cleanup <span class="k">do</span> effect): o request antigo e cancelado
+  <span class="k">const</span> ok = <span class="k">await</span> queryFetch(2);   // so o que importa
+  console.log(<span class="s">&#x27;query (com cleanup)  :&#x27;</span>, ok);   // Bruno
+})();
+// resposta user 2: Bruno
+// resposta user 1: Ana
+// query (com cleanup)  : Bruno</pre></div>
+
+
+<h3>2. Closure stale: o contador que nunca passa de 1</h3>
+
+<div class="code2col"></div>
+
+<p>&gt; No React: `setInterval(() =&gt; setCount(count + 1), 1000)` com `[]` lê o `count` da 1ª renderização (0) para sempre; `setCount(c =&gt; c + 1)` recebe o valor mais recente a cada tick.</p>
+
+<h3>3. Fetch no effect: race condition + AbortController (e a versão query)</h3>
+
+<div class="code2col"></div>
+
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Derivado ≠ state**: se calcula de estado/props, calcule na renderização (1 render, sem inconsistência).</li>
+<li>Effects em cadeia = dominó frágil; `useMemo` calcula na mesma renderização (não agenda outra).</li>
+<li>Closure stale só existe por causa do `useEffect`; use **updater function**.</li>
+<li>Fetch no effect = 3 bugs (race, desmonte, estado inconsistente) → ~30 linhas corrigidas vs **5 linhas** com TanStack Query/SWR.</li>
+<li>**useEffect legítimo**: efeitos colaterais externos (listeners, WebSocket, timers) com cleanup.</li>
+<li>Ordens de decisão: calculável → deriva; data fetch → biblioteca; externo → useEffect.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=6rdD4itgDVk">useEffect: o Melhor Effect é o que Você Deleta</a> (~6:11).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

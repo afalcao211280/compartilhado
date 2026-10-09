@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — Como funciona a autenticação moderna</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #161a22;
+    --border: #262d3a;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #79c0ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+  .meta { color: var(--text-dim); font-size: 0.9rem; }
+  .meta a { color: var(--accent-2); text-decoration: none; }
+  .intro {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h2 .num { color: var(--accent-2); margin-right: 0.5rem; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; color: #fff; }
+  p, li { color: var(--text); }
+  ul, ol { padding-left: 1.4rem; margin: 0.4rem 0 0.9rem; }
+  li { margin: 0.25rem 0; }
+  strong { color: #fff; }
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.9rem 0;
+    font-size: 0.95rem;
+  }
+  .ex .lbl { color: var(--accent-2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .warn { border-left: 4px solid var(--warn); }
+  .warn .lbl { color: var(--warn); }
+  .ok { border-left: 4px solid var(--ok); }
+  .ok .lbl { color: var(--ok); }
+  .danger { border-left: 4px solid var(--danger); }
+  .danger .lbl { color: var(--danger); }
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+  th { background: var(--surface); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .combo { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .combo strong { color: var(--ok); }
+  /* ===== Blocos de código (Java 26 / Go 1.26 / Python 3.14) ===== */
+  .code2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 2rem;
+  }
+  @media (max-width: 1100px) {
+    .code2col { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .code2col { grid-template-columns: 1fr; }
+  }
+  pre.src {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  pre.src b { color: var(--accent-2); font-weight: 700; display: block; margin-bottom: 0.5rem; }
+  pre.src .k { color: #ff7b72; }   /* keyword */
+  pre.src .t { color: #79c0ff; }   /* type */
+  pre.src .s { color: #a5d6ff; }   /* string */
+  pre.src .c { color: #8b949e; font-style: italic; } /* comment */
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding: 0.3rem 0 0.3rem 1.8rem; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--accent-2); }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Como funciona a autenticação moderna</h1>
+  <div class="meta">Resumo em pt-BR · vídeo ~19:51 · <a href="https://www.youtube.com/watch?v=uLY1CuLi9ac">ver no YouTube</a> · 30/08/2026</div>
+</header>
+
+<div class="intro">
+  Você clica em "entrar" e em 200 ms está logado. Como o servidor sabe que você é quem diz ser? O vídeo percorre cada etapa da autenticação moderna — senhas com hash, sessões, JWT, OAuth/OIDC, MFA, passkeys — e os erros de segurança que causam problemas em produção.
+</div>
+
+<h2><span class="num">0.</span>Autenticação ≠ Autorização</h2>
+<div class="ex">
+  <span class="lbl">Conceito-chave</span><br>
+  <strong>Autenticação</strong> prova <em>quem você é</em> (mostra o documento na portaria). <strong>Autorização</strong> define <em>o que você pode fazer</em> (crachá que libera o andar). Primeiro prova a identidade, depois o sistema decide o que liberar.
+</div>
+
+<h2><span class="num">1.</span>Senha: hash + salt (+ erros comuns)</h2>
+<p>O servidor <strong>nunca</strong> deve guardar senha em texto — se o banco vazar, o atacante teria tudo.</p>
+<ul>
+  <li><strong>Hash</strong>: transforma texto numa string fixa, processo <strong>irreversível</strong> (texto → hash, nunca o inverso)</li>
+  <li><strong>SHA-256 é rápido demais</strong>: ~1 bilhão de hashes/s numa GPU moderna → atacante testa bilhões de senhas em segundos</li>
+  <li><strong>bcrypt / Argon2 são lentos de propósito</strong>: usam <em>work factor</em> (nº de rodadas). Com valor certo, cada hash demora centenas de ms → ataque de segundos vira <strong>anos</strong></li>
+  <li><strong>Salt</strong>: valor aleatório antes do hash. Duas pessoas com a mesma senha geram hashes diferentes. Sem salt, atacante usa <strong>rainbow tables</strong> (tabelas pré-computadas de hashes comuns)</li>
+  <li>Login: servidor pega a senha digitada, aplica hash com o salt salvo e compara com o hash armazenado</li>
+</ul>
+<div class="ex danger">
+  <span class="lbl">Erros comuns</span><br>
+  ❌ <strong>Mensagens de erro diferentes</strong> ("usuário não encontrado" vs "senha incorreta") → atacante descobre quais e-mails existem. Sempre mensagem genérica: "e-mail ou senha incorretos".<br>
+  ❌ <strong>Sem rate limiting</strong> → script testa 100.000 senhas/min. Proteção: limitar por IP <strong>e</strong> por conta, bloqueio temporário após X falhas.<br>
+  ❌ <strong>SQL Injection no login</strong>: concatenar input na query. <code>' OR 1=1 --</code> no e-mail retorna todos os usuários. Solução: <strong>queries parametrizadas</strong>, nunca concatenar input do usuário.
+</div>
+
+<h2><span class="num">2.</span>Sessão: o servidor lembra do login</h2>
+<p>E-mail/senha → servidor valida → cria registro de sessão → devolve identificador num <strong>cookie</strong> que o browser guarda e envia <strong>automaticamente</strong> em toda requisição. O servidor confere na memória e sabe quem é você.</p>
+<ul>
+  <li><strong>HttpOnly</strong>: JS não acessa o cookie → protege contra XSS</li>
+  <li><strong>Secure</strong>: só envia por HTTPS</li>
+  <li><strong>SameSite</strong>: bloqueia envio de outros domínios → protege contra CSRF</li>
+</ul>
+<div class="ex danger">
+  <span class="lbl">Cuidados</span><br>
+  <strong>Session fixation</strong>: atacante planta um session ID antes do login; se o ID não muda após login, ele o usa. Solução: <strong>gerar novo session ID após o login</strong>.<br>
+  <strong>Troca de senha</strong>: se o atacante já roubou a sessão, trocar a senha não resolve — é preciso <strong>invalidar todas as sessões</strong> e forçar login.<br>
+  <strong>Onde guardar</strong>: memória (rápida, reiniciou perdeu) → banco (persistente, query extra) → <strong>Redis</strong> (padrão de produção: rápido, compartilhado entre servidores). Sem ele, com 3 servidores atrás de load balancer a sessão só existe num deles. <em>Sessões são stateful, e estado é difícil de escalar.</em>
+</div>
+
+<h2><span class="num">3.</span>JWT: autenticar sem estado</h2>
+<p><strong>JWT</strong> = 3 partes separadas por ponto:</p>
+<ul>
+  <li><strong>Header</strong>: algoritmo de assinatura</li>
+  <li><strong>Payload</strong>: ID do usuário, expiração, escopos. Base64 → <strong>não é criptografado</strong>! Qualquer um com o token lê o conteúdo → nunca colocar dados sensíveis</li>
+  <li><strong>Signature</strong>: garante que ninguém forjou o conteúdo</li>
+</ul>
+<p><strong>Algoritmos:</strong> <strong>HMAC</strong> (chave simétrica — a mesma que assina verifica; bom com 1 servidor) · <strong>RSA/ECDSA</strong> (assimétricas — privada assina, pública verifica; essencial em microsserviços: cada serviço só precisa da chave pública, a privada nunca sai do auth server).</p>
+<div class="ex danger">
+  <span class="lbl">Erros</span><br>
+  ❌ Chave secreta fraca ("secret123") → forja qualquer token. Chave: <strong>≥ 256 bits de entropia</strong>, aleatória, em <strong>variável de ambiente</strong>.<br>
+  ❌ Verificar só a assinatura, ignorar <strong>issuer (iss) e audience (aud)</strong> → token do serviço A reutilizado no B. Valide sempre iss + aud + exp.
+</div>
+<p><strong>Fluxo</strong>: login → servidor gera token → devolve → cada requisição manda no header <code>Authorization: Bearer &lt;token&gt;</code> → servidor verifica a assinatura, sem guardar nada.</p>
+<div class="ex warn">
+  <span class="lbl">Onde guardar</span><br>
+  ❌ <strong>localStorage</strong>: JS lê e manda no header — mas qualquer script malicioso também lê (XSS) → token vaza.<br>
+  ✅ <strong>Cookie HttpOnly</strong>: JS não acessa, browser manda automaticamente. Regra: aplicação web → <strong>cookies</strong>.
+</div>
+<p><strong>Revogação:</strong> access token ~<strong>15 min</strong> + <strong>refresh token</strong> (dias/semanas) com <strong>rotação</strong> — cada uso invalida o antigo e gera novo. Se roubarem o antigo, já não funciona.</p>
+
+<h2><span class="num">4.</span>Sessão vs JWT</h2>
+<table>
+  <tr><th>Situação</th><th>Escolha</th></tr>
+  <tr><td>App web tradicional, 1 servidor, poucos serviços</td><td><strong>Sessão</strong> — simples, fácil de revogar, servidor controla tudo</td></tr>
+  <tr><td>API consumida por vários clientes / microsserviços</td><td><strong>JWT</strong> — cada serviço valida sozinho com a chave pública</td></tr>
+  <tr><td>Híbrido comum</td><td><strong>Os dois</strong> — sessão pro usuário final, JWT entre serviços internos</td></tr>
+</table>
+<p>Sessão = simplicidade + revogação · JWT = escala + flexibilidade.</p>
+
+<h2><span class="num">5.</span>OAuth 2.0: "entrar com Google"</h2>
+<p><strong>OAuth é autorização delegada</strong>: você autoriza um app a acessar seus dados em outro serviço <strong>sem dar sua senha</strong>. O app nunca vê sua senha do Google; só recebe permissão para nome e e-mail.</p>
+<p><strong>4 papéis</strong>: <strong>Resource Owner</strong> (você) · <strong>Client</strong> (o app) · <strong>Authorization Server</strong> (quem autentica/autoriza — ex.: Google) · <strong>Resource Server</strong> (a API com os dados).</p>
+<div class="ex">
+  <span class="lbl">Fluxo mais seguro — Authorization Code</span><br>
+  1. App redireciona pro Google com: client ID, URL de retorno, escopos e <strong>state</strong> aleatório (anti-CSRF)<br>
+  2. Você loga no Google, vê a tela de permissões, aceita<br>
+  3. Google redireciona de volta com <strong>código de autorização</strong> na URL (uso único, vida curta)<br>
+  4. App manda o código pro Google <strong>direto do back end</strong> + client secret → recebe os tokens (servidor-a-servidor; o token nunca passa pelo browser)
+</div>
+<p><strong>Exceção: apps mobile</strong> — não têm como guardar client secret (qualquer um inspeciona o código). Solução: <strong>PKCE</strong>: app gera string aleatória (<strong>code verifier</strong>) → calcula o hash (<strong>code challenge</strong>) e manda na 1ª requisição → ao trocar código por tokens, manda o verifier; o Google aplica o hash e compara. Se bater, prova que quem troca é quem iniciou o fluxo. Mesmo interceptando o código, sem verifier não troca por tokens.</p>
+<div class="ex danger">
+  <span class="lbl">Erros</span><br>
+  ❌ <strong>Open redirect</strong>: se o authorization server não valida a redirect URI <strong>exatamente</strong> (caráter por caráter, sem wildcard), o atacante aponta pro domínio dele e o código cai no servidor dele.<br>
+  ❌ <strong>Sem state</strong>: atacante inicia fluxo OAuth com a conta dele e manda o callback pra vítima → vincula a conta do atacante ao perfil da vítima. State: sempre aleatório, vinculado à sessão, verificado no retorno.
+</div>
+
+<h2><span class="num">6.</span>OpenID Connect: identidade sobre OAuth</h2>
+<p>OAuth diz <strong>o que o app pode acessar</strong>, mas <strong>não quem é o usuário</strong>. OIDC adiciona o <strong>ID token</strong> — um JWT com identidade (nome, e-mail, foto). "Entrar com Google" na prática é OIDC.</p>
+<ul>
+  <li><strong>Nonce</strong>: valor único por login; protege contra <strong>replay</strong> (atacante copia o token da rede e reenvia; o servidor vê que já foi usado e rejeita)</li>
+  <li><strong>Escopos</strong>: definem exatamente o que o app pode fazer (ler e-mail, não deletar). <strong>Menor privilégio</strong>: o app só recebe o menor escopo necessário, escopos ficam no token, a API checa antes de responder — sem o escopo certo, nega mesmo com token válido</li>
+</ul>
+
+<h2><span class="num">7.</span>MFA: segunda camada de defesa</h2>
+<p><strong>3 fatores</strong>: algo que você <strong>sabe</strong> (senha/PIN) · algo que você <strong>tem</strong> (celular/chave física) · algo que você <strong>é</strong> (digital/facial). MFA exige <strong>pelo menos 2 fatores diferentes</strong>.</p>
+<ul>
+  <li><strong>SMS</strong>: o mais fraco — número clonável por <strong>SIM swap</strong></li>
+  <li><strong>TOTP</strong>: servidor gera chave secreta compartilhada com o app (Google Authenticator, 1Password); o app combina chave + horário/30s e aplica HMAC → código de 6 dígitos a cada 30s; servidor faz a mesma conta; sem internet. Vulnerável a phishing (código digitado em site falso)</li>
+  <li><strong>Chaves físicas (U2F)</strong>: não vulneráveis a phishing</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Atenção</span><br>
+  MFA só no login não basta: se o atacante já tem sessão ativa, pode trocar e-mail, resetar senha e tomar a conta. Operações sensíveis (trocar e-mail, mudar senha, <strong>desativar MFA</strong>, transferir dinheiro) exigem <strong>step-up authentication</strong> — pedir o 2º fator de novo.
+</div>
+
+<h2><span class="num">8.</span>Passkeys: eliminar a senha</h2>
+<p><strong>Passkeys (WebAuthn/FIDO2)</strong> eliminam senhas com <strong>criptografia de chave pública</strong>:</p>
+<ul>
+  <li>Dispositivo gera par de chaves → <strong>chave privada</strong> fica no dispositivo (protegida por biometria/PIN, <strong>nunca sai dele</strong>) → <strong>chave pública</strong> vai pro servidor</li>
+  <li><strong>Login</strong>: servidor manda challenge aleatório → dispositivo pede biometria, assina → servidor verifica com a pública. Sem senha, sem código, sem nada roubável por phishing</li>
+  <li><strong>Anti-phishing nativo</strong>: chave <strong>vinculada ao domínio</strong> — site falso não funciona ("gooogle.com" não é reconhecido)</li>
+  <li>Podem ser <strong>sincronizadas</strong> (iCloud Keychain, Google Password Manager) — resolve perder o celular, adiciona confiança na nuvem; para alta segurança, passkeys <strong>não sincronizadas</strong> em hardware (YubiKey)</li>
+</ul>
+
+<h2><span class="num">9.</span>Os 3 ataques mais comuns + password reset</h2>
+<ul>
+  <li><strong>XSS</strong>: injeta JS malicioso na página; token no localStorage vaza. <strong>Defesa em camadas</strong>: cookie HttpOnly + CSP + sanitização de input</li>
+  <li><strong>CSRF</strong>: site do atacante faz requisição pro seu banco; cookies são enviados automaticamente. <code>SameSite=Strict</code> resolve a maioria; formulários: token CSRF único por sessão</li>
+  <li><strong>CORS mal configurado</strong>: <code>Access-Control-Allow-Origin: *</code> + <code>credentials: true</code> → qualquer site faz requisições autenticadas. Correção: origens explícitas</li>
+  <li><strong>Password reset</strong>: token previsível (base64 do ID) → tokens pra qualquer conta. Token: <strong>aleatório, expira em minutos, uso único</strong>, e invalidar todas as sessões após resetar</li>
+</ul>
+
+<h2><span class="num">10.</span>Fluxo completo</h2>
+<div class="combo">
+  <strong>1.</strong> Usuário digita e-mail e senha · <strong>2.</strong> Servidor compara o hash (bcrypt), confere o salt · <strong>3.</strong> Pede o 2º fator (TOTP ou passkey assina o challenge) · <strong>4.</strong> Gera <strong>access token JWT de 15 min</strong> (chave privada) + refresh token com rotação · <strong>5.</strong> A cada requisição, a API verifica assinatura, checa escopos e responde · <strong>6.</strong> Access expira → refresh renova nos bastidores · <strong>7.</strong> Login social → OAuth com PKCE + OIDC traz a identidade no ID token.
+</div>
+
+<h2><span class="num">11.</span>Exemplos de código — Java 26, Go 1.26 e Python 3.14</h2>
+<p>Implementações com <strong>stdlib pura</strong> (sem dependências), validadas: os 9 exemplos compilam e rodam; o TOTP produz o mesmo código (935084) nas 3 linguagens no mesmo segundo.</p>
+
+<h3>Hash de senha (PBKDF2)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — Hash com PBKDF2 (javax.crypto)</b>
+<span class="k">import</span> javax.crypto.SecretKeyFactory;
+<span class="k">import</span> javax.crypto.spec.PBEKeySpec;
+<span class="k">import</span> java.security.SecureRandom;
+<span class="k">import</span> java.util.HexFormat;
+
+<span class="k">public class</span> <span class="t">PasswordHash</span> {
+    <span class="k">public static void</span> main(String[] args) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">char</span>[] senha = <span class="s">"minha-senha"</span>.toCharArray();
+        <span class="t">byte</span>[] salt = <span class="k">new</span> <span class="t">byte</span>[16];
+        <span class="k">new</span> <span class="t">SecureRandom</span>().nextBytes(salt);
+
+        <span class="c">// Work factor alto: 600.000 iteracoes, 256 bits</span>
+        <span class="t">PBEKeySpec</span> spec = <span class="k">new</span> <span class="t">PBEKeySpec</span>(senha, salt, 600_000, 256);
+        <span class="t">SecretKeyFactory</span> f =
+            <span class="t">SecretKeyFactory</span>.getInstance(<span class="s">"PBKDF2WithHmacSHA256"</span>);
+        <span class="t">byte</span>[] hash = f.generateSecret(spec).getEncoded();
+
+        <span class="c">// Armazenar salt + hash + iteracoes (nunca a senha)</span>
+        System.out.println(<span class="s">"salt: "</span> + <span class="t">HexFormat</span>.of().formatHex(salt));
+        System.out.println(<span class="s">"hash: "</span> + <span class="t">HexFormat</span>.of().formatHex(hash));
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — Hash com PBKDF2 (crypto/pbkdf2)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"crypto/pbkdf2"</span>
+    <span class="s">"crypto/rand"</span>
+    <span class="s">"crypto/sha256"</span>
+    <span class="s">"encoding/hex"</span>
+    <span class="s">"fmt"</span>
+)
+
+<span class="k">func</span> main() {
+    salt := <span class="k">make</span>([]<span class="t">byte</span>, 16)
+    rand.Read(salt)
+
+    <span class="c">// Work factor alto: 600.000 iteracoes, 32 bytes</span>
+    <span class="c">// Key(h func() Hash, password string, salt, iter, keyLen)</span>
+    hash, err := pbkdf2.Key(sha256.New, <span class="s">"minha-senha"</span>,
+        salt, 600_000, 32)
+    <span class="k">if</span> err != <span class="k">nil</span> {
+        panic(err)
+    }
+
+    <span class="c">// Armazenar salt + hash + iteracoes (nunca a senha)</span>
+    fmt.Println(<span class="s">"salt:"</span>, hex.EncodeToString(salt))
+    fmt.Println(<span class="s">"hash:"</span>, hex.EncodeToString(hash))
+}
+</pre>
+<pre class="src"><b># Python 3.14 — Hash com PBKDF2 (hashlib)</b>
+<span class="k">import</span> hashlib
+<span class="k">import</span> os
+
+
+<span class="k">def</span> hash_senha(senha: str, iteracoes: int = 600_000):
+    salt = os.urandom(16)  <span class="c"># salt aleatorio por usuario</span>
+
+    <span class="c"># Work factor alto: 600.000 iteracoes</span>
+    hash_bytes = hashlib.pbkdf2_hmac(
+        <span class="s">"sha256"</span>, senha.encode(), salt, iteracoes
+    )
+
+    <span class="c"># Armazenar salt + hash + iteracoes (nunca a senha)</span>
+    <span class="k">return</span> salt.hex(), hash_bytes.hex()
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    salt, h = hash_senha(<span class="s">"minha-senha"</span>)
+    print(f<span class="s">"salt: {salt}"</span>)
+    print(f<span class="s">"hash: {h}"</span>)
+</pre>
+</div>
+
+<h3>Assinatura de token (JWT HS256)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — JWT HS256 (HMAC-SHA256)</b>
+<span class="k">import</span> javax.crypto.Mac;
+<span class="k">import</span> javax.crypto.spec.SecretKeySpec;
+<span class="k">import</span> java.nio.charset.StandardCharsets;
+<span class="k">import</span> java.util.Base64;
+
+<span class="k">public class</span> <span class="t">JwtHmac</span> {
+    <span class="k">static</span> <span class="t">String</span> b64url(<span class="t">byte</span>[] b) {
+        <span class="k">return</span> <span class="t">Base64</span>.getUrlEncoder()
+            .withoutPadding().encodeToString(b);
+    }
+
+    <span class="k">static</span> <span class="t">byte</span>[] hmac(<span class="t">String</span> secret, <span class="t">String</span> data)
+        <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">Mac</span> mac = <span class="t">Mac</span>.getInstance(<span class="s">"HmacSHA256"</span>);
+        mac.init(<span class="k">new</span> <span class="t">SecretKeySpec</span>(
+            secret.getBytes(<span class="t">StandardCharsets</span>.UTF_8),
+            <span class="s">"HmacSHA256"</span>));
+        <span class="k">return</span> mac.doFinal(
+            data.getBytes(<span class="t">StandardCharsets</span>.UTF_8));
+    }
+
+    <span class="k">public static void</span> main(String[] args)
+        <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">String</span> secret =
+            <span class="s">"chave-com-256-bits-de-entropia!!"</span>;
+
+        <span class="c">// Header/payload base64url (NAO criptografado)</span>
+        <span class="t">String</span> header =
+            <span class="s">"{\"alg\":\"HS256\",\"typ\":\"JWT\"}"</span>;
+        <span class="t">String</span> payload =
+            <span class="s">"{\"sub\":\"42\",\"exp\":1750000000,"</span>
+            + <span class="s">"\"scope\":\"read\"}"</span>;
+        <span class="t">String</span> signingInput = b64url(header.getBytes())
+            + <span class="s">"."</span> + b64url(payload.getBytes());
+        <span class="t">String</span> signature =
+            b64url(hmac(secret, signingInput));
+
+        <span class="t">String</span> token = signingInput + <span class="s">"."</span> + signature;
+        System.out.println(<span class="s">"token: "</span> + token);
+
+        <span class="c">// Verificacao: recalcula e compara</span>
+        <span class="t">String</span> expected =
+            b64url(hmac(secret, signingInput));
+        System.out.println(<span class="s">"assinatura valida: "</span>
+            + expected.equals(signature));
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — JWT HS256 (HMAC-SHA256)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"crypto/hmac"</span>
+    <span class="s">"crypto/sha256"</span>
+    <span class="s">"encoding/base64"</span>
+    <span class="s">"encoding/json"</span>
+    <span class="s">"fmt"</span>
+)
+
+<span class="k">func</span> b64url(b []<span class="t">byte</span>) <span class="t">string</span> {
+    <span class="k">return</span> base64.RawURLEncoding.EncodeToString(b)
+}
+
+<span class="k">func</span> main() {
+    <span class="c">// Variavel de ambiente na vida real</span>
+    secret := []<span class="t">byte</span>(
+        <span class="s">"chave-com-256-bits-de-entropia!!"</span>)
+
+    <span class="c">// Header/payload base64url (NAO criptografado)</span>
+    header, _ := json.Marshal(
+        <span class="k">map</span>[<span class="t">string</span>]<span class="t">string</span>{
+            <span class="s">"alg"</span>: <span class="s">"HS256"</span>, <span class="s">"typ"</span>: <span class="s">"JWT"</span>})
+    payload, _ := json.Marshal(
+        <span class="k">map</span>[<span class="t">string</span>]<span class="t">any</span>{
+            <span class="s">"sub"</span>: <span class="s">"42"</span>, <span class="s">"exp"</span>: 1750000000,
+            <span class="s">"scope"</span>: <span class="s">"read"</span>})
+
+    signingInput := b64url(header) + <span class="s">"."</span> + b64url(payload)
+
+    mac := hmac.New(sha256.New, secret)
+    mac.Write([]<span class="t">byte</span>(signingInput))
+    signature := b64url(mac.Sum(<span class="k">nil</span>))
+
+    token := signingInput + <span class="s">"."</span> + signature
+    fmt.Println(<span class="s">"token:"</span>, token)
+
+    <span class="c">// Verificacao: recalcula e compara</span>
+    mac2 := hmac.New(sha256.New, secret)
+    mac2.Write([]<span class="t">byte</span>(signingInput))
+    fmt.Println(<span class="s">"assinatura valida:"</span>,
+        hmac.Equal(mac2.Sum(<span class="k">nil</span>),
+            mustDecode(signature)))
+}
+
+<span class="k">func</span> mustDecode(s <span class="t">string</span>) []<span class="t">byte</span> {
+    b, err := base64.RawURLEncoding.DecodeString(s)
+    <span class="k">if</span> err != <span class="k">nil</span> {
+        panic(err)
+    }
+    <span class="k">return</span> b
+}
+</pre>
+<pre class="src"><b># Python 3.14 — JWT HS256 (HMAC-SHA256)</b>
+<span class="k">import</span> base64
+<span class="k">import</span> hashlib
+<span class="k">import</span> hmac
+<span class="k">import</span> json
+
+
+<span class="k">def</span> b64url(data: bytes) -&gt; str:
+    <span class="k">return</span> base64.urlsafe_b64encode(
+        data).rstrip(b<span class="s">"="</span>).decode()
+
+
+<span class="k">def</span> assinar_jwt(payload: dict, secret: str) -&gt; str:
+    header = {<span class="s">"alg"</span>: <span class="s">"HS256"</span>,
+              <span class="s">"typ"</span>: <span class="s">"JWT"</span>}
+
+    <span class="c"># Header/payload base64url (NAO criptografado)</span>
+    enc = <span class="k">lambda</span> d: b64url(json.dumps(
+        d, separators=(<span class="s">","</span>, <span class="s">":"</span>)).encode())
+    signing_input = enc(header) + <span class="s">"."</span> + enc(payload)
+
+    <span class="c"># Assina: HMAC-SHA256</span>
+    sig = hmac.new(secret.encode(),
+        signing_input.encode(), hashlib.sha256).digest()
+    <span class="k">return</span> signing_input + <span class="s">"."</span> + b64url(sig)
+
+
+<span class="k">def</span> verificar_jwt(token: str, secret: str) -&gt; bool:
+    signing_input, _, sig = token.rpartition(<span class="s">"."</span>)
+    expected = hmac.new(secret.encode(),
+        signing_input.encode(),
+        hashlib.sha256).digest()
+    <span class="k">return</span> hmac.compare_digest(
+        b64url(expected).encode(), sig.encode())
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    secret = <span class="s">"chave-com-256-bits-de-entropia!!"</span>
+    token = assinar_jwt(
+        {<span class="s">"sub"</span>: <span class="s">"42"</span>, <span class="s">"exp"</span>: 1750000000,
+         <span class="s">"scope"</span>: <span class="s">"read"</span>}, secret)
+    print(f<span class="s">"token: {token}"</span>)
+    print(<span class="s">"assinatura valida:"</span>,
+        verificar_jwt(token, secret))
+</pre>
+</div>
+
+<h3>TOTP — código de 6 dígitos (RFC 6238)</h3>
+<div class="code2col">
+<pre class="src"><b>// Java 26 — TOTP (RFC 6238)</b>
+<span class="k">import</span> javax.crypto.Mac;
+<span class="k">import</span> javax.crypto.spec.SecretKeySpec;
+<span class="k">import</span> java.nio.ByteBuffer;
+<span class="k">import</span> java.nio.charset.StandardCharsets;
+
+<span class="k">public class</span> <span class="t">Totp</span> {
+    <span class="k">static</span> <span class="t">String</span> totp(<span class="t">String</span> secret,
+        <span class="t">long</span> nowSeconds) <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="c">// Janela de 30 segundos</span>
+        <span class="t">long</span> counter = nowSeconds / 30;
+        <span class="t">byte</span>[] msg = <span class="t">ByteBuffer</span>.allocate(8)
+            .putLong(counter).array();
+
+        <span class="t">Mac</span> mac = <span class="t">Mac</span>.getInstance(<span class="s">"HmacSHA1"</span>);
+        mac.init(<span class="k">new</span> <span class="t">SecretKeySpec</span>(
+            secret.getBytes(<span class="t">StandardCharsets</span>.UTF_8),
+            <span class="s">"HmacSHA1"</span>));
+        <span class="t">byte</span>[] h = mac.doFinal(msg);
+
+        <span class="c">// Dynamic truncation (RFC 4226)</span>
+        <span class="t">int</span> offset = h[h.length - 1] &amp; 0x0F;
+        <span class="t">int</span> code = ((h[offset] &amp; 0x7F) &lt;&lt; 24)
+            | ((h[offset + 1] &amp; 0xFF) &lt;&lt; 16)
+            | ((h[offset + 2] &amp; 0xFF) &lt;&lt; 8)
+            | (h[offset + 3] &amp; 0xFF);
+        <span class="k">return</span> <span class="t">String</span>.format(<span class="s">"%06d"</span>,
+            code % 1_000_000);
+    }
+
+    <span class="k">public static void</span> main(String[] args)
+        <span class="k">throws</span> <span class="t">Exception</span> {
+        <span class="t">long</span> now =
+            System.currentTimeMillis() / 1000;
+        System.out.println(<span class="s">"codigo atual: "</span>
+            + totp(<span class="s">"chave-secreta-compartilhada"</span>,
+                now));
+    }
+}
+</pre>
+<pre class="src"><b>// Go 1.26 — TOTP (RFC 6238)</b>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"crypto/hmac"</span>
+    <span class="s">"crypto/sha1"</span>
+    <span class="s">"encoding/binary"</span>
+    <span class="s">"fmt"</span>
+    <span class="s">"time"</span>
+)
+
+<span class="k">func</span> totp(secret <span class="t">string</span>, now time.Time) <span class="t">string</span> {
+    <span class="c">// Janela de 30 segundos</span>
+    counter := uint64(now.Unix() / 30)
+    <span class="k">var</span> msg [8]<span class="t">byte</span>
+    binary.BigEndian.PutUint64(msg[:], counter)
+
+    mac := hmac.New(sha1.New, []<span class="t">byte</span>(secret))
+    mac.Write(msg[:])
+    h := mac.Sum(<span class="k">nil</span>)
+
+    <span class="c">// Dynamic truncation (RFC 4226)</span>
+    offset := h[len(h)-1] &amp; 0x0F
+    code := (<span class="t">int</span>(h[offset])&amp;0x7F)&lt;&lt;24 | <span class="t">int</span>(h[offset+1])&lt;&lt;16 | <span class="t">int</span>(h[offset+2])&lt;&lt;8 | <span class="t">int</span>(h[offset+3])
+    <span class="k">return</span> fmt.Sprintf(<span class="s">"%06d"</span>,
+        code%1_000_000)
+}
+
+<span class="k">func</span> main() {
+    fmt.Println(<span class="s">"codigo atual:"</span>,
+        totp(<span class="s">"chave-secreta-compartilhada"</span>,
+            time.Now()))
+}
+</pre>
+<pre class="src"><b># Python 3.14 — TOTP (RFC 6238)</b>
+<span class="k">import</span> hashlib
+<span class="k">import</span> hmac
+<span class="k">import</span> struct
+<span class="k">import</span> time
+
+
+<span class="k">def</span> totp(secret: str,
+          now: int | <span class="t">None</span> = <span class="t">None</span>) -&gt; str:
+    now = int(time.time()) <span class="k">if</span> now <span class="k">is</span> <span class="t">None</span> else now
+    counter = now // 30  <span class="c"># janela de 30s</span>
+
+    <span class="c"># HMAC-SHA1 sobre o contador big-endian (8B)</span>
+    msg = struct.pack(<span class="s">"&gt;Q"</span>, counter)
+    h = hmac.new(secret.encode(), msg,
+                 hashlib.sha1).digest()
+
+    <span class="c"># Dynamic truncation (RFC 4226)</span>
+    offset = h[-1] &amp; 0x0F
+    code = (struct.unpack(<span class="s">"&gt;I"</span>,
+        h[offset:offset + 4])[0] &amp; 0x7FFFFFFF) \
+        % 1_000_000
+    <span class="k">return</span> f<span class="s">"{code:06d}"</span>
+
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    print(f<span class="s">"codigo atual: "</span>
+          f<span class="s">"{totp('chave-secreta-compartilhada')}"</span>)
+</pre>
+</div>
+
+<h2><span class="num">12.</span>Checklist de segurança</h2>
+<ul class="checklist">
+  <li>Senha: hash lento (bcrypt/Argon2/PBKDF2) + salt único por usuário</li>
+  <li>Mensagem de login genérica ("e-mail ou senha incorretos")</li>
+  <li>Rate limiting por IP e por conta</li>
+  <li>Queries parametrizadas (nunca concatenar input)</li>
+  <li>Cookie: HttpOnly + Secure + SameSite; novo session ID após login</li>
+  <li>Invalidar todas as sessões ao trocar senha</li>
+  <li>Sessão em Redis (não em memória de servidor único)</li>
+  <li>JWT: secret ≥ 256 bits em env var; validar iss + aud + exp; sem dados sensíveis no payload</li>
+  <li>Token em cookie HttpOnly (não localStorage)</li>
+  <li>Access token curto (~15 min) + refresh token com rotação</li>
+  <li>OAuth: Authorization Code + PKCE (mobile), redirect URI exata, state anti-CSRF</li>
+  <li>OIDC: validar nonce (anti-replay)</li>
+  <li>MFA: TOTP ou chave física (não SMS); step-up em operações sensíveis</li>
+  <li>Passkeys onde possível (anti-phishing nativo)</li>
+  <li>CSP + sanitização (anti-XSS); SameSite=Strict + token CSRF (anti-CSRF)</li>
+  <li>CORS: origens explícitas, nunca <code>*</code> com credentials</li>
+  <li>Password reset: token aleatório, expira em minutos, uso único, invalidar sessões</li>
+</ul>
+
+<footer>
+  Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=uLY1CuLi9ac">Como funciona a autenticação moderna</a> (pt-BR, ~19:51). Código validado: OpenJDK 26.0.2.1, Go 1.26.6, Python 3.14.7.
+</footer>
+
+</div>
+</body>
+</html>

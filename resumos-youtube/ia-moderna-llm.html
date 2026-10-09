@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como uma LLM funciona por dentro</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Como uma LLM funciona por dentro</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=Rc7pw0v0L2o">https://www.youtube.com/watch?v=Rc7pw0v0L2o</a> · pt-BR · ~16:39 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Como uma LLM funciona por dentro&quot; (pt-BR, ~16:39)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=Rc7pw0v0L2o</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_ia.json</p>
+
+<h2>Tese central</h2>
+
+<p>Uma LLM é **álgebra linear aplicada em escala**: bilhões de operações matemáticas por resposta. Todo comportamento (escrever código, traduzir, &quot;raciocinar&quot;) vem de **parâmetros** — números decimais ajustados no treinamento — funcionando juntos.</p>
+
+<h2>Etapas por dentro</h2>
+
+<h3>1. Tokenização</h3>
+<ul style='padding-left:1.3rem'>
+<li>Transformar texto em números: quebrar em pedaços, cada um com um **ID numérico**.</li>
+<li>Nem sempre um token é uma palavra inteira: &quot;programar&quot; pode virar `program` + `ar` (o tokenizador aprende padrões comuns).</li>
+<li>Vocabulário: **30 mil a 100 mil tokens**.</li>
+</ul>
+
+<h3>2. Embeddings (geometria do significado)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Cada token vira um **vetor** (centenas/milhares de dimensões) — coordenadas de significado.</li>
+<li>Palavras parecidas ficam **perto** (rei/rainha, gato/cachorro; JavaScript/Python em outro grupo).</li>
+<li>Relações viram **direções**: `rei − homem + mulher ≈ rainha`. O modelo aprende isso sozinho, lendo texto.</li>
+</ul>
+
+<h3>3. Transformer (arquitetura, 2017 — &quot;Attention Is All You Need&quot;)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Antes: RNNs processavam palavra por palavra — lentas e esqueciam o começo.</li>
+<li>Transformer: processa **todas as palavras em paralelo**; cada palavra &quot;olha&quot; todas as outras, não importa a distância.</li>
+<li>**Self-attention**: cada palavra faz 3 perguntas:</li>
+<li>**Query** — &quot;o que estou procurando aqui?&quot;</li>
+<li>**Key** — &quot;o que tenho a oferecer?&quot;</li>
+<li>**Value** — &quot;qual informação passo adiante?&quot;</li>
+<li>`score = produto escalar(query, key)`; passam por **softmax** (probabilidades que somam 1) → média ponderada dos Values.</li>
+<li>Em &quot;o gato que mora na casa do vizinho **dormiu** no sofá&quot;, `dormiu` dá score alto para `gato` (7 palavras antes).</li>
+<li>**Multi-head**: várias cabeças em paralelo, cada uma focando aspectos diferentes (gramática, semântica...).</li>
+<li>**Feed-forward** depois da atenção: cada &quot;pessoa volta pra mesa e processa o que ouviu&quot;.</li>
+<li>**GPT-3: 96 camadas** empilhadas (camadas iniciais = gramática; meio = conceitos abstratos; finais = ideias complexas).</li>
+</ul>
+
+<h3>4. Treinamento: pré-treinamento, fine-tuning, RLHF</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Pré-treinamento**: prever a próxima palavra em bilhões de textos da internet. Erro volta por todas as camadas (**backpropagation**) ajustando cada parâmetro — por isso custa milhões de dólares.</li>
+<li>Resultado do pré-treinamento: um &quot;autocomplete gourmetizado&quot; (responde &quot;qual a capital da França?&quot; com &quot;qual a capital da Alemanha?&quot;).</li>
+<li>**Fine-tuning**: re-treinar com dataset pequeno e específico de pares instrução→resposta.</li>
+<li>**RLHF**: humanos rankeiam respostas → treina-se um **reward model** → a LLM ajusta parámetros para maximizar a nota (&quot;professor particular&quot;).</li>
+</ul>
+
+<h3>5. Inferência</h3>
+<ul style='padding-left:1.3rem'>
+<li>Input → tokens → embeddings → camadas → **distribuição de probabilidade sobre o vocabulário**.</li>
+<li>**Temperature**: 0 = sempre a palavra mais provável (previsível); alta = probabilidades distribuídas (criativa, imprevisível).</li>
+<li>**Autoregressivo**: uma palavra por vez, realimentando o input.</li>
+</ul>
+
+<h2>Limitações</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Alucinação**: o modelo não armazena fatos como banco de dados; aprende padrões estatísticos. Brasil/Copa aparecem juntos, mas o ano é aposta probabilística.</li>
+<li>**Janela de contexto**: atenção compara cada token com todos os outros — custo **quadrático** (dobrar contexto = 4× cálculos). Conversa longa → mensagens antigas &quot;caem da mesa&quot;.</li>
+</ul>
+
+<h2>O que diferencia um modelo do outro</h2>
+
+<p>| Fator | Efeito |</p>
+<p>|---|---|</p>
+<p>| **Dados de treinamento** | O que o modelo &quot;sabe&quot; (código → bom em programação; artigos → pesquisa) |</p>
+<p>| **Tamanho** | Mais parâmetros = mais capacidade, mais custo (celular vs data center) |</p>
+<p>| **Alinhamento** | Fine-tuning + RLHF de cada empresa = &quot;personalidade&quot; (Claude responde diferente do GPT) |</p>
+
+<h2>Open source: DeepSeek e MiniMax</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**DeepSeek R1** (jan/2025): superou GPT/Claude em benchmarks de matemática e programação competitiva; **Mixture of Experts** — 671B parâmetros, só **37B ativos por vez**; custo de treinamento muito menor; licença MIT.</li>
+<li>**MiniMax 01**: **Lightning Attention** (alternativa ao transformer tradicional), 456B parâmetros, contexto de **4 milhões de tokens** (20-30× a maioria). M2.5 compete com Claude Opus 4.5 custando 20× menos.</li>
+<li>Com pesos abertos: rodar na própria máquina sem API, ajustar pro seu caso, entender o que acontece por dentro.</li>
+</ul>
+
+<p>&gt; Nenhuma LLM **entende** o que diz — não há consciência nem intenção. É álgebra linear; a linha entre prever padrões e compreender de verdade fica cada vez mais difícil de enxergar.</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — Python 3.14 (stdlib)</h2>
+
+<h3>1. Tokenização + embeddings: a analogia clássica</h3>
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — tokens viram vetores; rei - homem + mulher ~ rainha</span>
+<span class="k">import</span> math
+
+VOCAB = [<span class="s">&#x27;rei&#x27;</span>, <span class="s">&#x27;homem&#x27;</span>, <span class="s">&#x27;mulher&#x27;</span>, <span class="s">&#x27;rainha&#x27;</span>, <span class="s">&#x27;gato&#x27;</span>, <span class="s">&#x27;cachorro&#x27;</span>]
+
+<span class="c"># embeddings 3d artesanais (apenas para ilustrar a geometria)</span>
+E = {
+    <span class="s">&#x27;rei&#x27;</span>:     [0.9, 0.1, 0.5],
+    <span class="s">&#x27;homem&#x27;</span>:   [0.8, 0.2, 0.4],
+    <span class="s">&#x27;mulher&#x27;</span>:  [0.8, 0.2, 0.6],
+    <span class="s">&#x27;rainha&#x27;</span>:  [0.9, 0.1, 0.7],
+    <span class="s">&#x27;gato&#x27;</span>:    [0.2, 0.9, 0.1],
+    <span class="s">&#x27;cachorro&#x27;</span>:[0.2, 0.8, 0.1],
+}
+
+<span class="k">def</span> sub(a, b): <span class="k">return</span> [a[i] - b[i] <span class="k">for</span> i <span class="k">in</span> range(3)]
+<span class="k">def</span> add(a, b): <span class="k">return</span> [a[i] + b[i] <span class="k">for</span> i <span class="k">in</span> range(3)]
+
+<span class="k">def</span> cosseno(a, b):
+    dot = sum(x * y <span class="k">for</span> x, y <span class="k">in</span> zip(a, b))
+    na = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> a))
+    nb = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> b))
+    <span class="k">return</span> dot / (na * nb)
+
+<span class="k">def</span> mais_proximo(v):
+    <span class="k">return</span> max(VOCAB, key=<span class="k">lambda</span> w: cosseno(v, E[w]))
+
+alvo = add(sub(E[<span class="s">&#x27;rei&#x27;</span>], E[<span class="s">&#x27;homem&#x27;</span>]), E[<span class="s">&#x27;mulher&#x27;</span>])
+<span class="k">print</span>(<span class="s">&#x27;rei - homem + mulher -&gt;&#x27;</span>, mais_proximo(alvo))   <span class="c"># rainha</span>
+<span class="k">print</span>(<span class="s">&#x27;gato vs cachorro     -&gt;&#x27;</span>, round(cosseno(E[<span class="s">&#x27;gato&#x27;</span>], E[<span class="s">&#x27;cachorro&#x27;</span>]), 2))
+<span class="k">print</span>(<span class="s">&#x27;gato vs rei          -&gt;&#x27;</span>, round(cosseno(E[<span class="s">&#x27;gato&#x27;</span>], E[<span class="s">&#x27;rei&#x27;</span>]), 2))
+<span class="c"># rei - homem + mulher -&gt; rainha</span>
+<span class="c"># gato vs cachorro     -&gt; 1.0</span>
+<span class="c"># gato vs rei          -&gt; 0.33</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — atencao em &quot;o gato dormiu&quot;: dormiu olha para gato</span>
+<span class="k">import</span> math
+
+<span class="k">def</span> softmax(vals):
+    mx = max(vals)
+    ex = [math.exp(v - mx) <span class="k">for</span> v <span class="k">in</span> vals]
+    s = sum(ex)
+    <span class="k">return</span> [e / s <span class="k">for</span> e <span class="k">in</span> ex]
+
+<span class="k">def</span> produto_escalar(a, b):
+    <span class="k">return</span> sum(x * y <span class="k">for</span> x, y <span class="k">in</span> zip(a, b))
+
+<span class="c"># embeddings 2d: [caracteristica_animal, caracteristica_acao]</span>
+tokens = {
+    <span class="s">&#x27;o&#x27;</span>:     [0.1, 0.1],
+    <span class="s">&#x27;gato&#x27;</span>:  [0.9, 0.2],
+    <span class="s">&#x27;dormiu&#x27;</span>:[0.3, 0.9],
+}
+
+K_lin = {<span class="s">&#x27;o&#x27;</span>: [0.1, 0.1], <span class="s">&#x27;gato&#x27;</span>: [0.9, 0.2], <span class="s">&#x27;dormiu&#x27;</span>: [0.3, 0.9]}  <span class="c"># keys</span>
+Q = {<span class="s">&#x27;o&#x27;</span>: [0.1, 0.1], <span class="s">&#x27;gato&#x27;</span>: [0.9, 0.2], <span class="s">&#x27;dormiu&#x27;</span>: [0.3, 0.9]}      <span class="c"># queries</span>
+V = {<span class="s">&#x27;o&#x27;</span>: [0.2, 0.1], <span class="s">&#x27;gato&#x27;</span>: [0.8, 0.3], <span class="s">&#x27;dormiu&#x27;</span>: [0.2, 0.9]}      <span class="c"># values</span>
+
+palavra = <span class="s">&#x27;dormiu&#x27;</span>
+scores = {t: produto_escalar(Q[palavra], K_lin[t]) <span class="k">for</span> t <span class="k">in</span> tokens}
+probs = softmax(list(scores.values()))
+<span class="k">print</span>(<span class="s">&#x27;scores de &quot;dormiu&quot;:&#x27;</span>, {t: round(s, 3) <span class="k">for</span> t, s <span class="k">in</span> scores.items()})
+<span class="k">print</span>(<span class="s">&#x27;softmax:&#x27;</span>, [round(p, 3) <span class="k">for</span> p <span class="k">in</span> probs])
+
+<span class="c"># saida de &quot;dormiu&quot; = media ponderada dos Values</span>
+saida = [sum(probs[i] * V[t][d] <span class="k">for</span> i, t <span class="k">in</span> enumerate(tokens)) <span class="k">for</span> d <span class="k">in</span> range(2)]
+<span class="k">print</span>(<span class="s">&#x27;saida de &quot;dormiu&quot;:&#x27;</span>, [round(x, 3) <span class="k">for</span> x <span class="k">in</span> saida])
+<span class="c"># scores de &quot;dormiu&quot;: {&#x27;o&#x27;: 0.12, &#x27;gato&#x27;: 0.45, &#x27;dormiu&#x27;: 0.9}</span>
+<span class="c"># softmax: [0.219, 0.304, 0.477]</span>
+<span class="c"># saida de &quot;dormiu&quot;: [0.383, 0.543]</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — gerar texto palavra a palavra, com temperature</span>
+<span class="k">import</span> math, random
+
+<span class="c"># logits &quot;hipoteticos&quot; do modelo: o modelo da um numero (logit) para cada</span>
+<span class="c"># token do vocabulario — aqui dependem da ultima palavra gerada</span>
+<span class="k">def</span> logits_para_prox(ultima):
+    base = {<span class="s">&#x27;o&#x27;</span>: 0.2, <span class="s">&#x27;gato&#x27;</span>: 1.5, <span class="s">&#x27;dormiu&#x27;</span>: 0.8, <span class="s">&#x27;no&#x27;</span>: 0.3, <span class="s">&#x27;sofa&#x27;</span>: 0.6}
+    <span class="c"># &quot;gato&quot; e mais provavel depois de &quot;o&quot;; &quot;sofa&quot; depois de &quot;no&quot;...</span>
+    <span class="k">if</span> ultima == <span class="s">&#x27;o&#x27;</span>:
+        base[<span class="s">&#x27;gato&#x27;</span>] = 1.5
+    <span class="k">elif</span> ultima == <span class="s">&#x27;gato&#x27;</span>:
+        base[<span class="s">&#x27;dormiu&#x27;</span>] = 1.4
+    <span class="k">elif</span> ultima == <span class="s">&#x27;dormiu&#x27;</span>:
+        base[<span class="s">&#x27;no&#x27;</span>] = 1.2
+    <span class="k">elif</span> ultima == <span class="s">&#x27;no&#x27;</span>:
+        base[<span class="s">&#x27;sofa&#x27;</span>] = 1.6
+    <span class="k">return</span> base
+
+<span class="k">def</span> amostrar(probs):
+    r = random.random()
+    acc = 0.0
+    <span class="k">for</span> palavra, p <span class="k">in</span> probs:
+        acc += p
+        <span class="k">if</span> r &lt;= acc:
+            <span class="k">return</span> palavra
+    <span class="k">return</span> probs[-1][0]
+
+<span class="k">def</span> gerar(inicio, temperature, passos=5):
+    palavras = [inicio]
+    <span class="k">for</span> _ <span class="k">in</span> range(passos):
+        logit = logits_para_prox(palavras[-1])   <span class="c"># dict token -&gt; logit</span>
+        <span class="k">if</span> temperature == 0:
+            palavras.append(max(logit, key=logit.get))   <span class="c"># sempre a mais provavel</span>
+        <span class="k">else</span>:
+            exp = [math.exp(logit[w] / temperature) <span class="k">for</span> w <span class="k">in</span> logit]
+            s = sum(exp)
+            probs = [(w, exp[i] / s) <span class="k">for</span> i, w <span class="k">in</span> enumerate(logit)]
+            palavras.append(amostrar(probs))
+    <span class="k">return</span> <span class="s">&#x27; &#x27;</span>.join(palavras)
+
+<span class="k">print</span>(<span class="s">&#x27;temp 0 :&#x27;</span>, gerar(<span class="s">&#x27;o&#x27;</span>, 0.0))   <span class="c"># previsivel: o gato gato gato...</span>
+random.seed(7)
+<span class="k">print</span>(<span class="s">&#x27;temp 2 :&#x27;</span>, gerar(<span class="s">&#x27;o&#x27;</span>, 2.0))   <span class="c"># mais aleatorio</span>
+<span class="c"># temp 0 : o gato gato gato gato gato</span>
+<span class="c"># temp 1/2: variam a cada execucao (aleatoriedade controlada)</span></pre></div>
+
+
+<h3>2. Self-attention simplificada (Q/K/V + softmax)</h3>
+
+<div class="code2col"></div>
+
+<p>&gt; O score alto com `gato` (0.45) mostra que a atenção conecta `dormiu` ao sujeito, mesmo distante. Em LLMs reais isso acontece com vetores de centenas/milhares de dimensões e dezenas de camadas.</p>
+
+<h3>3. Decodificação autoregressiva com temperature</h3>
+
+<div class="code2col"></div>
+
+<p>&gt; LLMs reais têm logits sobre 30–100 mil tokens e a amostragem com temperature faz a mesma pergunta render respostas diferentes.</p>
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Parâmetros = números ajustados no treinamento; bilhões/trilhões deles = LLM.</li>
+<li>Embeddings transformam significado em **geometria**.</li>
+<li>Transformer: aten��ão (Q/K/V) + feed-forward, empilhados (GPT-3: 96 camadas).</li>
+<li>Atenção é **quadrática** → janela de contexto limitada (&quot;mesa de escritório&quot;).</li>
+<li>Pré-treinamento → fine-tuning → RLHF = modelo útil e seguro.</li>
+<li>Temperature controla o balanço precisão/criatividade na geração.</li>
+<li>Diferenças entre modelos: dados, tamanho, alinhamento.</li>
+<li>Open source (DeepSeek MoE, MiniMax Lightning Attention) vs proprietário.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=Rc7pw0v0L2o">Como uma LLM funciona por dentro</a> (~16:39).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

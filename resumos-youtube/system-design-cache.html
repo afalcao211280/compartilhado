@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Cache</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Design — Cache</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=i3Y2NmCGfuA">https://www.youtube.com/watch?v=i3Y2NmCGfuA</a> · pt-BR · ~7 · 30/08/2026</p>
+
+<h1>Resumo — &quot;System Design: Cache&quot; (pt-BR, ~7:48)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=i3Y2NmCGfuA</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_sd3.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Cache é guardar uma cópia de algo para não precisar buscar de novo. É tipo comida na geladeira: cozinhar do zero toda vez é caro; esquentar comida pronta é rápido e barato a partir da segunda vez.</p>
+
+<p>Funciona por causa da **localidade temporal**: dados acessados recentemente tendem a ser acessados de novo. O post que viralizou hoje será requisitado milhares de vezes nas próximas horas.</p>
+
+<h2>Hit, miss e hit rate</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Cache hit**: achou no cache → devolve direto.</li>
+<li>**Cache miss**: não achou → busca no banco, guarda no cache, devolve.</li>
+<li>**Hit rate**: % das requisições respondidas pelo cache.</li>
+</ul>
+
+<p>Cada ponto percentual importa em grande escala: com 1M de requisições, 90% de hit rate = 100.000 batendo no banco; 99% = só 10.000. Banco demora dezenas/centenas de ms; cache em memória &lt; 1 ms. (Contexto: a Uber processa **40+ milhões de req/s** — nenhum banco aguentaria sem cache.)</p>
+
+<h2>Onde cachear (as camadas)</h2>
+
+<p>1. **Browser** — guarda estáticos localmente (CSS, JS, imagens). É por isso que um site recarregado carrega instantâneo.</p>
+<p>2. **CDN** — servidores espalhados pelo mundo com cópias do conteúdo (usuário pega do mais próximo).</p>
+<p>3. **Aplicação** — resultados de queries, respostas de APIs externas, cálculos pesados. **Redis, Memcached**.</p>
+<p>4. **Banco de dados** — cache interno (query cache, buffer pool), sem controle granular.</p>
+
+<p>**A camada que você controla é a da aplicação.**</p>
+
+<h2>Estratégias de leitura</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Cache Aside (Lazy Loading)**: aplicação olha no cache; se achar, devolve; se não, busca no banco, guarda, devolve. Só guarda o que é usado. **A mais comum** — flexível e fácil.</li>
+<li>**Read-Through**: o cache é o responsável por buscar no banco; a aplicação nunca fala direto com o banco. Mais organizado, mas precisa de um cache que suporte.</li>
+</ul>
+
+<h2>Estratégias de escrita e a invalidação</h2>
+
+<p>O grande problema: usuário atualiza dado → salvo no banco, mas o cache continua servindo o dado antigo.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Write-Through**: toda escrita vai para cache E banco ao mesmo tempo. Consistente, mas escrita mais lenta (2 operações).</li>
+<li>**Write-Behind**: escreve no cache primeiro; o cache sincroniza com o banco depois. Rápido, mas se o cache cair antes de sincronizar, **perde dados**.</li>
+<li>**Invalidação** (a mais comum): quando o dado muda, apaga do cache → a próxima leitura busca o dado novo.</li>
+</ul>
+
+<p>&gt; &quot;Só existem duas coisas difíceis em computação: invalidação de cache e dar nome às coisas.&quot; — Phil Karlton</p>
+
+<p>**TTL (Time to Live)**: o dado expira sozinho depois de um tempo. TTL de 5 min = no pior caso, usuário vê dado desatualizado por 5 min. TTL curto = mais consistência, mais miss, mais carga no banco. TTL longo = menos consistência, mais hit, menos carga. O valor certo depende do caso.</p>
+
+<h2>Eviction (remoção de dados)</h2>
+
+<p>Cache tem tamanho limitado; quando enche, precisa remover algo:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**LRU** (Least Recently Used): remove o usado há mais tempo. &quot;Se ninguém pediu faz tempo, provavelmente não vão pedir tão cedo.&quot; Simples, funciona na maioria dos casos.</li>
+<li>**LFU** (Least Frequently Used): remove o usado menos vezes. Melhor para dados quentes acessados o tempo todo. O Redis suporta os dois.</li>
+</ul>
+
+<h2>Cache local vs distribuído</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Local** (em memória, por servidor): mais rápido, mas **não é compartilhado** — o servidor 2 não acessa o cache do servidor 1.</li>
+<li>**Distribuído** (servidor separado — Redis/Memcached): um pouco mais lento (rede), mas **compartilhado** entre todas as instâncias. **Praticamente obrigatório** para quem escala horizontalmente.</li>
+</ul>
+
+<h2>Problemas clássicos</h2>
+
+<p>1. **Cache stampede**: o cache expira e 1000 requisições chegam juntas → todas vão ao banco. Solução: **lock** — só uma busca no banco, as outras esperam.</p>
+<p>2. **Cold start**: sistema reinicia com cache vazio → tudo vai ao banco até esquentar. Solução: **cache warming** — pré-carrega os dados mais acessados antes de receber tráfego.</p>
+<p>3. **Inconsistência**: cache e banco com dados diferentes. Solução: TTLs razoáveis + invalidação explícita; aceitar que consistência perfeita com cache é difícil.</p>
+
+<h2>Quando usar (e quando não)</h2>
+
+<p>👍 Cache funciona bem quando:</p>
+<ul style='padding-left:1.3rem'>
+<li>O dado é **lido muito mais do que escrito**;</li>
+<li>O custo de buscar é alto (queries lentas, APIs externas);</li>
+<li>**Consistência eventual é aceitável**.</li>
+</ul>
+
+<p>👎 Não cacheie quando:</p>
+<ul style='padding-left:1.3rem'>
+<li>O dado **muda o tempo todo**;</li>
+<li>Consistência imediata é crítica (**saldo bancário, estoque**);</li>
+<li>O dado é único por usuário e raramente reutilizado.</li>
+</ul>
+
+<h2>Conclusão</h2>
+
+<p>Cache é um tradeoff: ganha velocidade, paga complexidade (invalidação, consistência, eviction). O segredo é saber quando vale a pena — e sua arquitetura tem que ser desenhada pensando nisso desde o início.</p>
+
+<h2>Exemplo de código — cache aside com TTL (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — cache aside + TTL + lock anti-stampede</span>
+<span class="k">import</span> time
+
+<span class="k">class</span> Cache:
+    <span class="k">def</span> __init__(self):
+        self.dados = {}
+        self.expira = {}
+
+    <span class="k">def</span> get(self, chave):
+        agora = time.time()
+        <span class="k">if</span> chave <span class="k">in</span> self.dados <span class="k">and</span> self.expira[chave] &gt; agora:
+            <span class="k">return</span> self.dados[chave], <span class="s">&quot;HIT&quot;</span>
+        <span class="k">return</span> <span class="k">None</span>, <span class="s">&quot;MISS&quot;</span>
+
+    <span class="k">def</span> set(self, chave, valor, ttl):
+        self.dados[chave] = valor
+        self.expira[chave] = time.time() + ttl
+
+<span class="k">class</span> Banco:
+    <span class="k">def</span> __init__(self):
+        self.dados = {<span class="s">&quot;perfil:1&quot;</span>: <span class="s">&quot;Ana&quot;</span>}
+        self.consultas = 0
+
+    <span class="k">def</span> buscar(self, chave):
+        self.consultas += 1
+        time.sleep(0.01)            <span class="c"># query &quot;lenta&quot;</span>
+        <span class="k">return</span> self.dados[chave]
+
+cache, banco = Cache(), Banco()
+lock  = {<span class="s">&quot;preso&quot;</span>: <span class="k">False</span>}
+
+<span class="k">def</span> ler(chave):
+    valor, status = cache.get(chave)
+    <span class="k">if</span> status == <span class="s">&quot;HIT&quot;</span>:
+        <span class="k">return</span> valor, <span class="s">&quot;hit (banco nao consultado)&quot;</span>
+    <span class="k">if</span> lock[<span class="s">&quot;preso&quot;</span>]:               <span class="c"># stampede: 2a requisicao espera</span>
+        <span class="k">while</span> lock[<span class="s">&quot;preso&quot;</span>]: time.sleep(0.001)
+        <span class="k">return</span> cache.dados[chave], <span class="s">&quot;hit apos esperar lock&quot;</span>
+    lock[<span class="s">&quot;preso&quot;</span>] = <span class="k">True</span>
+    <span class="k">try</span>:
+        valor = banco.buscar(chave)
+        cache.set(chave, valor, ttl=2)
+    finally:
+        lock[<span class="s">&quot;preso&quot;</span>] = <span class="k">False</span>
+    <span class="k">return</span> valor, <span class="s">&quot;miss -&gt; banco (1x)&quot;</span>
+
+<span class="k">print</span>(ler(<span class="s">&quot;perfil:1&quot;</span>))     <span class="c"># 1a: miss -&gt; banco</span>
+<span class="k">print</span>(ler(<span class="s">&quot;perfil:1&quot;</span>))     <span class="c"># 2a: hit</span>
+<span class="k">print</span>(<span class="s">&quot;consultas ao banco:&quot;</span>, banco.consultas)
+<span class="c"># (&#x27;Ana&#x27;, &#x27;miss -&gt; banco (1x)&#x27;)</span>
+<span class="c"># (&#x27;Ana&#x27;, &#x27;hit (banco nao consultado)&#x27;)</span>
+<span class="c"># consultas ao banco: 1</span></pre></div>
+
+
+<p>O essencial: a **primeira** leitura consome a query; as seguintes são servidas do cache até o TTL expirar. E o lock garante que, durante um stampede (cache expirado + muitas requisições), só **uma** requisição bata no banco.</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=i3Y2NmCGfuA">System Design — Cache</a> (~7).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

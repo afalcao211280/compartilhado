@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — O que React, Vue e Angular fazem por baixo dos panos</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #161a22;
+    --border: #262d3a;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #79c0ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+  .meta { color: var(--text-dim); font-size: 0.9rem; }
+  .meta a { color: var(--accent-2); text-decoration: none; }
+  .intro {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h2 .num { color: var(--accent-2); margin-right: 0.5rem; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; color: #fff; }
+  p, li { color: var(--text); }
+  ul, ol { padding-left: 1.4rem; margin: 0.4rem 0 0.9rem; }
+  li { margin: 0.25rem 0; }
+  strong { color: #fff; }
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.9rem 0;
+    font-size: 0.95rem;
+  }
+  .ex .lbl { color: var(--accent-2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .warn { border-left: 4px solid var(--warn); }
+  .warn .lbl { color: var(--warn); }
+  .ok { border-left: 4px solid var(--ok); }
+  .ok .lbl { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+  th { background: var(--surface); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .combo { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .combo strong { color: var(--ok); }
+  /* ===== Blocos de código (React / Vue / Angular) ===== */
+  .code2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 2rem;
+  }
+  @media (max-width: 1100px) {
+    .code2col { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .code2col { grid-template-columns: 1fr; }
+  }
+  pre.src {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  pre.src b { color: var(--accent-2); font-weight: 700; display: block; margin-bottom: 0.5rem; }
+  pre.src .k { color: #ff7b72; }   /* keyword */
+  pre.src .t { color: #79c0ff; }   /* type */
+  pre.src .s { color: #a5d6ff; }   /* string */
+  pre.src .c { color: #8b949e; font-style: italic; } /* comment */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>O que React, Vue e Angular fazem por baixo dos panos</h1>
+  <div class="meta">Resumo em pt-BR · vídeo ~12:48 · <a href="https://www.youtube.com/watch?v=JsvVohoIdt8">ver no YouTube</a> · 30/08/2026</div>
+</header>
+
+<div class="intro">
+  Você usa React, Vue ou Angular todo dia — mas sabe o que esses frameworks fazem <strong>por baixo dos panos</strong>? Os 10 conceitos internos explicam comportamentos estranhos e bugs comuns que você já encontrou.
+</div>
+
+<h2><span class="num">10.</span>Gerenciamento de estado</h2>
+<p>Todo framework resolve <strong>como os dados fluem entre componentes</strong>.</p>
+<ul>
+  <li><strong>Prop drilling:</strong> dado no raiz, consumo 5 níveis abaixo → passar por intermediários que nem usam. Solução: canal direto entre quem produz e quem consome (context/store/provide-inject)</li>
+  <li><strong>Estado local</strong> (input, item selecionado) fica no componente e morre com ele</li>
+  <li><strong>Estado global</strong> (usuário logado, tema, carrinho) para dados de vários componentes</li>
+  <li>Colocar tudo no global → rerenderiza o que não precisava atualizar</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Valor derivado</span><br>
+  Se algo pode ser calculado de outro estado (ex.: <code>filtrados</code> a partir de <code>itens</code> + <code>filtro</code>), <strong>não crie estado novo — apenas derive</strong>. Estado duplicado → esqueceu de atualizar → ficam dessincronizados.
+</div>
+
+<h2><span class="num">9.</span>Agrupamento de atualizações (batching)</h2>
+<p>Clicou num botão e mudou 3 estados (nome, e-mail, endereço):</p>
+<ul>
+  <li><strong>Sem batching:</strong> renderizaria o componente 3 vezes</li>
+  <li><strong>Com batching:</strong> coleta as mudanças numa fila e processa tudo junto — <strong>DOM atualizado uma vez</strong> com o resultado final</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Pegadinha</span><br>
+  Mudou estado e tentou ler o DOM logo em seguida → valor ainda é o antigo (o DOM só atualiza depois que o framework processa a fila).
+</div>
+
+<h2><span class="num">8.</span>Tree shaking e code splitting</h2>
+<p>O bundler junta todos os arquivos JS num pacote — app grande pode passar de 2 MB, e o usuário baixa tudo antes de ver qualquer coisa.</p>
+<ul>
+  <li><strong>Tree shaking:</strong> remove funções/módulos não importados. Lodash inteiro = 70 KB; só <code>debounce</code> = 2 KB. Import de forma específica ajuda mais ainda</li>
+  <li><strong>Code splitting:</strong> divide o bundle — Home baixa só o JS da Home, Dashboard só o chunk do Dashboard. Componente <strong>lazy</strong> baixa só quando precisa</li>
+</ul>
+<p>Tree shaking remove <strong>código morto</strong>; code splitting divide o <strong>código vivo</strong> em pedaços menores.</p>
+
+<h2><span class="num">7.</span>Ciclo de vida do componente</h2>
+<p>Três fases: <strong>monta</strong> (aparece), <strong>atualiza</strong> (estado/props mudam), <strong>desmonta</strong> (sai da tela). Cada framework dá hooks para essas fases.</p>
+<div class="ex warn">
+  <span class="lbl">Cleanup é essencial</span><br>
+  Chat que abre WebSocket ao montar precisa fechar ao desmontar. Trocar de sala 3 vezes sem cleanup = 3 conexões abertas. Timers, listeners e conexões que nunca fecham acumulam lixo na memória.
+</div>
+
+<h2><span class="num">6.</span>Compilação</h2>
+<p>O navegador <strong>não entende</strong> JSX, templates ou extensões próprias — tudo é transformado em JS puro no build:</p>
+<ul>
+  <li>Templates viram <strong>instruções de DOM</strong>, expressões viram <strong>lógica de atualização</strong></li>
+  <li><strong>Tradeoff:</strong> mais runtime no navegador (flexibilidade em runtime) vs mais trabalho no compilador (instruções específicas por componente, quase nada de runtime)</li>
+</ul>
+
+<h2><span class="num">5.</span>Roteamento no cliente</h2>
+<ul>
+  <li><strong>Site tradicional:</strong> clicou no link → requisição ao servidor → HTML novo → renderiza do zero (pisca, perde estado, ~meio segundo)</li>
+  <li><strong>SPA:</strong> JS intercepta o clique, atualiza a URL e troca o conteúdo — sem requisição, praticamente instantâneo</li>
+  <li>Por baixo: <strong>History API</strong> — <code>pushState</code> muda a URL sem requisição; <code>popstate</code> dispara no voltar</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Problema</span><br>
+  Digitar <code>site.com/produtos</code> direto → o servidor precisa devolver <code>index.html</code> para todas as rotas, senão 404 (fallback de rota).
+</div>
+
+<h2><span class="num">4.</span>Hydration</h2>
+<p>Com SSR, o servidor manda HTML completo → o usuário vê a página quase instantânea, mas estática. O JS carrega e <strong>conecta event listeners e estado a cada elemento</strong> — isso é hydration.</p>
+<ul>
+  <li>Vantagem: conteúdo visível antes do JS carregar (conexão lenta = usuário fica)</li>
+  <li><strong>Divergência de hydration:</strong> HTML do servidor ≠ JS do cliente → framework reclama ou renderiza tudo de novo (perde a vantagem do SSR)</li>
+  <li><strong>Arquitetura de ilhas:</strong> página quase toda em HTML puro; só os componentes interativos recebem hydration → menos JS, carrega mais rápido</li>
+</ul>
+
+<h2><span class="num">3.</span>Sistema de reatividade</h2>
+<p>Como o framework descobre o que mudou quando o estado muda?</p>
+<table>
+  <tr><th>Abordagem</th><th>Como funciona</th><th>Quando brilha</th></tr>
+  <tr><td><strong>Virtual DOM</strong></td><td>cria cópia da árvore, compara com a antiga, aplica só as diferenças no DOM</td><td>maioria das aplicações</td></tr>
+  <tr><td><strong>Signals</strong></td><td>sabe qual variável está ligada a qual elemento — vai direto no alvo, sem diff</td><td>listas grandes, animações pesadas</td></tr>
+</table>
+<p>Signals podem rodar em runtime (proxies) ou em tempo de compilação (gerando JS que já sabe quais instruções de DOM executar).</p>
+
+<h2><span class="num">2.</span>Reconciliação</h2>
+<p>Algoritmo que descobre <strong>o que mudou entre um render e outro</strong>:</p>
+<ul>
+  <li><strong>Tipo mudou</strong> (div → span): destrói o antigo e cria novo do zero</li>
+  <li><strong>Mesmo tipo:</strong> só atualiza as props que mudaram</li>
+  <li><strong>Listas precisam de key:</strong> sem key compara por posição — deletou o item do meio → acha que os últimos mudaram e recria</li>
+  <li><strong>Com key</strong> compara por identidade — só o item removido sai</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Erro mais comum</span><br>
+  Usar o <code>index</code> como key. Só funciona em lista estática; ao adicionar/remover/reordenar, o framework confunde componentes, inputs perdem texto, animações resetam, estado vaza. Para resetar um componente de propósito, basta mudar a key (remonta do zero).
+</div>
+
+<h2><span class="num">1.</span>O DOM (a base de tudo)</h2>
+<p>O navegador transforma HTML numa <strong>árvore de objetos na memória</strong> — cada tag vira um nó com propriedades, métodos e relações. JavaScript interage com a página <strong>através do DOM</strong>: <code>querySelector</code> acessa um objeto na memória; <code>textContent</code> atualiza a tela.</p>
+<ul>
+  <li>Cada mudança no DOM tem custo: recalcular estilos, recalcular layout, repintar pixels</li>
+  <li>Mudanças em sequência deixam o navegador lento</li>
+  <li><strong>Frameworks existem para minimizar quantas vezes o DOM é tocado</strong> — reconciliação, reatividade, batching — e para você ser produtivo (estado, ciclo de vida, routing)</li>
+</ul>
+
+<h2>Exemplos de código — React + Next, Vue e Angular</h2>
+<p>3 conceitos com componentes nos formatos canônicos de cada framework. Lógica validada executando num contexto Node — as 3 stacks produzem a mesma saída.</p>
+
+<h3>Estado derivado — sem estado duplicado</h3>
+<div class="code2col">
+<pre class="src"><b>// React + Next (App Router)</b>
+<span class="s">'use client'</span>;
+<span class="k">import</span> { useMemo, useState } <span class="k">from</span> <span class="s">'react'</span>;
+
+<span class="k">export default function</span> ProductList({ items }) {
+  <span class="k">const</span> [query, setQuery] = useState(<span class="s">''</span>);
+  <span class="c">// filtrados é DERIVADO</span>
+  <span class="c">// (items + query) — não é estado</span>
+  <span class="k">const</span> filtered = useMemo(
+    () =&gt; items.filter((it) =&gt;
+      it.name.toLowerCase().includes(
+        query.toLowerCase())),
+    [items, query],
+  );
+  <span class="k">return</span> (
+    &lt;&gt;
+      &lt;input value={query}
+        onChange={(e) =&gt;
+          setQuery(e.target.value)} /&gt;
+      &lt;ul&gt;{filtered.map((it) =&gt;
+        &lt;li key={it.id}&gt;
+          {it.name}&lt;/li&gt;)}&lt;/ul&gt;
+    &lt;/&gt;
+  );
+}
+</pre>
+<pre class="src"><b>// Vue (Composition API)</b>
+<span class="k">&lt;script setup&gt;</span>
+<span class="k">import</span> { ref, computed } <span class="k">from</span> <span class="s">'vue'</span>;
+
+<span class="k">const</span> props =
+  defineProps({ items: Array });
+<span class="k">const</span> query = ref(<span class="s">''</span>);
+
+<span class="c">// filtrados é DERIVADO</span>
+<span class="c">// (items + query) — não é estado</span>
+<span class="k">const</span> filtered = computed(() =&gt;
+  props.items.filter((it) =&gt;
+    it.name.toLowerCase().includes(
+      query.value.toLowerCase())));
+<span class="k">&lt;/script&gt;</span>
+
+<span class="k">&lt;template&gt;</span>
+  &lt;input v-model=<span class="s">"query"</span> /&gt;
+  &lt;ul&gt;&lt;li v-for=<span class="s">"it in filtered"</span>
+    :key=<span class="s">"it.id"</span>&gt;
+    {{ it.name }}&lt;/li&gt;&lt;/ul&gt;
+<span class="k">&lt;/template&gt;</span>
+</pre>
+<pre class="src"><b>// Angular (standalone + signals)</b>
+<span class="k">import</span> { Component, computed,
+  signal } <span class="k">from</span> <span class="s">'@angular/core'</span>;
+
+@Component({
+  selector: <span class="s">'app-product-list'</span>,
+  template: <span class="s">`
+    &lt;input [value]="query()"
+      (input)="query.set(
+        $any($event.target).value)" /&gt;
+    &lt;ul&gt;
+      &lt;li *ngFor=<span class="s">"let it of filtered();
+        trackBy: trackById"</span>
+        {{ it.name }}&lt;/li&gt;
+    &lt;/ul&gt;
+  `</span>,
+  standalone: <span class="k">true</span>,
+})
+<span class="k">export class</span> ProductListComponent {
+  query = signal(<span class="s">''</span>);
+  items = signal([...]);
+  <span class="c">// filtrados é DERIVADO</span>
+  <span class="c">// (computed) — não é estado</span>
+  filtered = computed(() =&gt;
+    <span class="k">this</span>.items().filter((it) =&gt;
+      it.name.toLowerCase().includes(
+        <span class="k">this</span>.query().toLowerCase())));
+
+  trackById(_i: number,
+    it: { id: number }) {
+    <span class="k">return</span> it.id; }
+}
+</pre>
+</div>
+
+<h3>Ciclo de vida — cleanup de conexão (WebSocket)</h3>
+<div class="code2col">
+<pre class="src"><b>// React</b>
+<span class="s">'use client'</span>;
+<span class="k">import</span> { useEffect } <span class="k">from</span> <span class="s">'react'</span>;
+
+<span class="k">export default function</span> ChatRoom({ roomId }) {
+  useEffect(() =&gt; {
+    <span class="k">const</span> ws = connect(roomId);
+    <span class="c">// montou -&gt; abre conexao</span>
+    <span class="k">return</span> () =&gt; ws.close();
+    <span class="c">// desmontou -&gt; fecha (cleanup)</span>
+  }, [roomId]);
+  <span class="c">// trocou sala -&gt; abre/fecha de novo</span>
+  <span class="k">return</span> &lt;div className=<span class="s">"chat"</span>&gt;…&lt;/div&gt;;
+}
+</pre>
+<pre class="src"><b>// Vue</b>
+<span class="k">&lt;script setup&gt;</span>
+<span class="k">import</span> { onMounted, onUnmounted }
+  <span class="k">from</span> <span class="s">'vue'</span>;
+
+<span class="k">const</span> props =
+  defineProps({ roomId: String });
+<span class="k">let</span> ws;
+
+onMounted(() =&gt; {
+  <span class="c">// montou -&gt; abre conexao</span>
+  ws = connect(props.roomId);
+});
+onUnmounted(() =&gt; ws.close());
+<span class="c">// desmontou -&gt; fecha</span>
+<span class="k">&lt;/script&gt;</span>
+
+<span class="k">&lt;template&gt;</span>
+  &lt;div className=<span class="s">"chat"</span>&gt;…&lt;/div&gt;
+<span class="k">&lt;/template&gt;</span>
+</pre>
+<pre class="src"><b>// Angular</b>
+<span class="k">import</span> { Component, DestroyRef,
+  inject } <span class="k">from</span> <span class="s">'@angular/core'</span>;
+
+@Component({
+  selector: <span class="s">'app-chat-room'</span>,
+  template: <span class="s">`&lt;div class="chat"&gt;…&lt;/div&gt;`</span>,
+  standalone: <span class="k">true</span>,
+})
+<span class="k">export class</span> ChatRoomComponent {
+  <span class="k">private</span> ws: any;
+  <span class="k">private</span> destroyRef =
+    inject(DestroyRef);
+
+  <span class="k">constructor</span>() {
+    <span class="c">// montou -&gt; abre conexao</span>
+    <span class="k">this</span>.ws =
+      connect(<span class="k">this</span>.roomId);
+    <span class="c">// desmontou -&gt; fecha</span>
+    <span class="k">this</span>.destroyRef.onDestroy(
+      () =&gt; <span class="k">this</span>.ws.close());
+  }
+}
+</pre>
+</div>
+
+<h3>Reconciliação — key / trackBy (identidade vs posição)</h3>
+<div class="code2col">
+<pre class="src"><b>React — key</b>
+&lt;ul&gt;
+  {items.map((it) =&gt; (
+    &lt;li key={it.id}&gt;
+      {it.name}&lt;/li&gt;
+  ))}
+&lt;/ul&gt;
+<span class="c">// ERRADO: key={index}</span>
+<span class="c">// quebra ao adicionar/</span>
+<span class="c">// remover/reordenar</span>
+
+<span class="c">// diff SEM key (posicao):</span>
+<span class="c">//  atualiza pos 1:</span>
+<span class="c">//    Bruno -&gt; Carla</span>
+<span class="c">//  remove Carla da pos 2</span>
+
+<span class="c">// diff COM key (id):</span>
+<span class="c">//  remove Bruno</span>
+<span class="c">//  move Carla p/ pos 1</span>
+</pre>
+<pre class="src"><b>Vue — :key</b>
+&lt;ul&gt;
+  &lt;li v-for=<span class="s">"it in items"</span>
+    :key=<span class="s">"it.id"</span>&gt;
+    {{ it.name }}&lt;/li&gt;
+&lt;/ul&gt;
+<span class="c">&lt;!-- ERRADO: :key="index"</span>
+<span class="c">   so funciona em lista</span>
+<span class="c">   estatica --&gt;</span>
+
+<span class="c">// diff SEM :key (posicao):</span>
+<span class="c">//  atualiza pos 1:</span>
+<span class="c">//    Bruno -&gt; Carla</span>
+<span class="c">//  remove Carla da pos 2</span>
+
+<span class="c">// diff COM :key (id):</span>
+<span class="c">//  remove Bruno</span>
+<span class="c">//  move Carla p/ pos 1</span>
+</pre>
+<pre class="src"><b>Angular — trackBy</b>
+<span class="c">// template: *ngFor=</span>
+<span class="c">//   "let it of items;</span>
+<span class="c">//    trackBy: trackById"</span>
+trackById(_index: number,
+  it: { id: number }) {
+  <span class="k">return</span> it.id;
+}
+<span class="c">// ERRADO: sem trackBy</span>
+<span class="c">// compara por posicao</span>
+
+<span class="c">// diff SEM trackBy:</span>
+<span class="c">//  atualiza pos 1:</span>
+<span class="c">//    Bruno -&gt; Carla</span>
+<span class="c">//  remove Carla da pos 2</span>
+
+<span class="c">// diff COM trackBy:</span>
+<span class="c">//  remove Bruno</span>
+<span class="c">//  move Carla p/ pos 1</span>
+</pre>
+</div>
+
+<p>Saída validada do diff (idêntica nas 3): sem key → <code>atualiza pos 1: Bruno -&gt; Carla</code>; com key → <code>remove Bruno</code> e <code>move Carla p/ pos 1</code>. Sem key o framework acha que Carla mudou (perde estado/input); com key só Bruno sai.</p>
+
+<h2>Mapa mental — os 10 em uma linha</h2>
+<div class="combo">
+  <strong>1.</strong> Estado — local (componente), global (context/store); <strong>derive, não duplique</strong> · <strong>2.</strong> Batching — agrupa mudanças, DOM atualiza uma vez; não ler DOM logo após setState · <strong>3.</strong> Tree shaking + code splitting — remove código morto, divide o vivo (lazy) · <strong>4.</strong> Ciclo de vida — monta/atualiza/desmonta; cleanup sempre (ws, timer, listener) · <strong>5.</strong> Compilação — JSX/template → JS puro no build; tradeoff runtime vs compilador · <strong>6.</strong> Roteamento cliente — History API (pushState/popstate); fallback do servidor p/ todas as rotas · <strong>7.</strong> Hydration — HTML do SSR ganha vida; divergência = problema; ilhas p/ menos JS · <strong>8.</strong> Reatividade — Virtual DOM (diff) vs signals (direto no elemento) · <strong>9.</strong> Reconciliação — tipo mudou → remonta; mesmas props → atualiza; key = identidade · <strong>10.</strong> DOM — árvore de objetos; tocar o DOM é caro; frameworks minimizam os toques
+</div>
+
+<footer>
+  Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=JsvVohoIdt8">O que React, Vue e Angular fazem por baixo dos panos</a> (pt-BR, ~12:48). Código validado: Node v24.19.0.
+</footer>
+
+</div>
+</body>
+</html>

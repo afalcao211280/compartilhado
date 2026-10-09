@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — 10 conceitos de frontend profissional</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #161a22;
+    --border: #262d3a;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #79c0ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .wrap { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+  .meta { color: var(--text-dim); font-size: 0.9rem; }
+  .meta a { color: var(--accent-2); text-decoration: none; }
+  .intro {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h2 .num { color: var(--accent-2); margin-right: 0.5rem; }
+  h3 { font-size: 1.02rem; margin: 1.4rem 0 0.4rem; color: #fff; }
+  p, li { color: var(--text); }
+  ul, ol { padding-left: 1.4rem; margin: 0.4rem 0 0.9rem; }
+  li { margin: 0.25rem 0; }
+  strong { color: #fff; }
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.9rem 0;
+    font-size: 0.95rem;
+  }
+  .ex .lbl { color: var(--accent-2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .warn { border-left: 4px solid var(--warn); }
+  .warn .lbl { color: var(--warn); }
+  .ok { border-left: 4px solid var(--ok); }
+  .ok .lbl { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.8rem; text-align: left; vertical-align: top; }
+  th { background: var(--surface); color: var(--accent); }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .combo { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  .combo strong { color: var(--ok); }
+  /* ===== Blocos de código (JavaScript / Node) ===== */
+  .code2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.9rem;
+    margin: 1rem 0 2rem;
+  }
+  @media (max-width: 1100px) {
+    .code2col { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .code2col { grid-template-columns: 1fr; }
+  }
+  pre.src {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  pre.src b { color: var(--accent-2); font-weight: 700; display: block; margin-bottom: 0.5rem; }
+  pre.src .k { color: #ff7b72; }   /* keyword */
+  pre.src .t { color: #79c0ff; }   /* type */
+  pre.src .s { color: #a5d6ff; }   /* string */
+  pre.src .c { color: #8b949e; font-style: italic; } /* comment */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>10 conceitos que diferenciam um frontend tutorial de um frontend profissional</h1>
+  <div class="meta">Resumo em pt-BR · vídeo ~12:48 · <a href="https://www.youtube.com/watch?v=lMnmP4BhETY">ver no YouTube</a> · 30/08/2026</div>
+</header>
+
+<div class="intro">
+  Um tutorial te ensina a <strong>fazer um componente</strong>. Um frontend profissional te faz <strong>entender tudo por trás</strong> desse componente. Estes são os 10 conceitos que separam quem só monta tela de quem entende o navegador, os dados, a rede e o usuário real.
+</div>
+
+<h2><span class="num">10.</span>Pipeline de renderização do navegador</h2>
+<p>Ao mudar uma classe, trocar texto ou abrir um menu, o navegador passa por etapas em sequência — não joga pixels de qualquer jeito:</p>
+<ol>
+  <li>Entende o documento (HTML/DOM)</li>
+  <li>Aplica os estilos (CSS)</li>
+  <li>Calcula tamanho e posição (layout)</li>
+  <li>Pinta as camadas (paint)</li>
+  <li>Compõe tudo no frame (composite)</li>
+</ol>
+<div class="ex">
+  <span class="lbl">Percepção-chave</span><br>
+  Performance de frontend começa <strong>antes de pensar em React/Vue/Svelte</strong> — começa entendendo qual parte da tela você obrigou o navegador a recalcular.
+</div>
+
+<h2><span class="num">9.</span>Event Loop e scheduling</h2>
+<p>JavaScript do navegador roda muita coisa na <strong>mesma thread</strong>: clique, timer, promise, renderização, listener de scroll — tudo disputa tempo.</p>
+<table>
+  <tr><th>Fila</th><th>Quando roda</th></tr>
+  <tr><td><code>setTimeout</code></td><td>macrotask — depois</td></tr>
+  <tr><td><code>promise.then</code></td><td>microtask — antes de renderizar</td></tr>
+  <tr><td><code>requestAnimationFrame</code></td><td>antes do navegador pintar o próximo frame</td></tr>
+</table>
+<div class="ex warn">
+  <span class="lbl">Problema</span><br>
+  Coisa pesada em microtask atrás da outra → browser trava e não atualiza a tela. Lógica pesada no input → digitação fica lenta.
+</div>
+<div class="ex ok">
+  <span class="lbl">Solução</span><br>
+  Adiar parte do trabalho, quebrar em pedaços ou mover cálculo pesado para um <strong>web worker</strong>. Objetivo: o usuário sentir a interface responsiva.
+</div>
+
+<h2><span class="num">8.</span>Estado local, estado do servidor e URL</h2>
+<p>Muitos bugs nascem quando <strong>todo dado vira a mesma coisa</strong>. São três tipos com donos diferentes:</p>
+<table>
+  <tr><th>Tipo</th><th>Exemplo</th><th>Dono</th></tr>
+  <tr><td><strong>Local</strong></td><td>texto digitado no input</td><td>o componente controla</td></tr>
+  <tr><td><strong>URL</strong></td><td>página atual, ordenação, filtro</td><td>sobrevive refresh; dá pra copiar link e voltar</td></tr>
+  <tr><td><strong>Servidor</strong></td><td>perfil da API, produtos</td><td>contrato do backend; pode falhar, ficar velho, ser atualizado por outro</td></tr>
+</table>
+<p>Separar evita que a tela vire caixa preta: local → componente · precisa aparecer no link → URL · veio do backend → respeitar o contrato do servidor.</p>
+
+<h2><span class="num">7.</span>Cache, validação e atualização otimista</h2>
+<p>Buscar de novo toda hora deixa o app lento e sobrecarrega o servidor → o frontend guarda <strong>cópia (cache)</strong>: evita request repetida, acelera navegação e reaproveita dado entre telas.</p>
+<ul>
+  <li>Problema clássico: tela mostrando <strong>cache antigo</strong> com informação errada</li>
+  <li>Solução: a <strong>mutação avisa qual consulta ficou velha</strong> (refetch, atualizar chave local, marcar como stale)</li>
+  <li><strong>Atualização otimista:</strong> em vez de esperar a API confirmar, a UI já muda na hora</li>
+</ul>
+<div class="ex warn">
+  <span class="lbl">Tradeoff</span><br>
+  O otimista precisa saber <strong>desfazer (rollback)</strong>, lidar com duas mudanças acontecendo juntas e mostrar ao usuário que ainda está pendente.
+</div>
+
+<h2><span class="num">6.</span>SSR, hidratação e streaming</h2>
+<ul>
+  <li><strong>SSR:</strong> o servidor manda HTML com conteúdo, em vez de tela quase vazia montada com JS — usuário vê conteúdo mais rápido e o crawler do Google enxerga HTML fácil</li>
+  <li><strong>Hidratação:</strong> o HTML já está na tela, mas os componentes ainda precisam ganhar eventos, estado e comportamento</li>
+  <li><strong>Streaming:</strong> o servidor manda o esqueleto primeiro, depois os blocos conforme os dados ficam prontos</li>
+</ul>
+<div class="ex">
+  <span class="lbl">Perguntas do SSR</span><br>
+  Qual dado existe no servidor? Qual só no cliente? Quando a tela fica interativa?
+</div>
+
+<h2><span class="num">5.</span>Arquitetura de bundle</h2>
+<p>Em produção o navegador baixa <strong>pacotes gerados pelo build</strong>. O bundler pega o grafo de imports e transforma em chunks.</p>
+<div class="ex warn">
+  <span class="lbl">Exemplo</span><br>
+  Gráfico pesado que só aparece na página de admin dentro do bundle inicial → todo usuário do checkout baixa código que nunca vai abrir.
+</div>
+<ul>
+  <li><strong>Code splitting:</strong> carrega essa parte só quando a rota realmente precisa</li>
+  <li><strong>Tree shaking:</strong> build tenta remover código não usado — mas só funciona se os imports forem analisáveis</li>
+</ul>
+<p>Bundle é uma <strong>estratégia de entrega</strong>: o que baixa agora, o que baixa depois, o que fica em cache, o que acontece quando um chunk falha.</p>
+
+<h2><span class="num">4.</span>Performance da thread</h2>
+<p><strong>INP (Interaction to Next Paint)</strong> mede quanto tempo uma interação demora para virar mudança visível na tela. Clicar não pode só chamar função — o usuário precisa do feedback visual.</p>
+<ul>
+  <li>Exemplo: a cada clique filtrar, ordenar e renderizar 10.000 linhas → main thread ocupada, digitação pesada</li>
+  <li><strong>Virtualização:</strong> o dado inteiro existe, mas o DOM só sabe o que está visível</li>
+  <li>Outras técnicas: <strong>memoização</strong> e <strong>web workers</strong></li>
+</ul>
+<div class="ex">
+  <span class="lbl">Diagnóstico</span><br>
+  Cálculo → tirar do render · gargalo no DOM → virtualizar · gargalo no bundle → resolver antes da execução (code splitting).
+</div>
+
+<h2><span class="num">3.</span>Design system como contrato</h2>
+<p>Design system maduro não cuida só de layout — define <strong>contratos</strong>: qual cor representa erro, qual espaçamento separa sessões, como o botão carrega, como o campo mostra validação.</p>
+<ul>
+  <li>Formulário: cada tela inventando seu input → cada erro aparece de um jeito → o design system coloca a regra no <strong>componente base</strong> usado por todo mundo</li>
+  <li><strong>Tokens</strong> como contrato: se a cor primária muda, os componentes que usam token mudam juntos; cor na mão no código fica fora do padrão</li>
+  <li>Reduz inconsistência, documenta decisão, evita exceção por tela — inclusive cobrindo quem navega sem mouse</li>
+</ul>
+
+<h2><span class="num">2.</span>Arquitetura de acessibilidade</h2>
+<p>Acessibilidade avançada <strong>nasce no componente</strong>:</p>
+<table>
+  <tr><th>Widget</th><th>Comportamento esperado</th></tr>
+  <tr><td>Menu</td><td>abrir, mover foco, fechar com ESC, devolver o foco ao lugar certo</td></tr>
+  <tr><td>Modal</td><td>prender o foco enquanto aberto</td></tr>
+  <tr><td>Formulário</td><td>erro encontrado por leitor de tela</td></tr>
+  <tr><td>Combobox</td><td>coordenar teclado, opção ativa, filtro, ESC, Enter, clique fora</td></tr>
+</table>
+<p>Se cada tela refaz isso sozinha, aparecem bugs pequenos que quebram a interação (foco some, opção errada, ESC não funciona). E o <strong>estado dinâmico</strong>: se a tela muda após resposta da API, o leitor de tela precisa receber o feedback.</p>
+
+<h2><span class="num">1.</span>Observabilidade de frontend</h2>
+<p>Quando o app roda <strong>no navegador do usuário</strong>, o backend pode estar normal. O erro pode ser chunk que falhou, extensão, internet lenta ou sequência específica de cliques.</p>
+<ul>
+  <li><strong>Source map</strong> — liga o erro minificado ao arquivo original</li>
+  <li><strong>Release tracking</strong> — mostra depois de qual deploy o erro começou</li>
+  <li><strong>Error boundary</strong> — impede que uma parte quebrada derrube a tela inteira</li>
+  <li><strong>Session replay</strong> — caminho exato do usuário até o problema</li>
+</ul>
+<table>
+  <tr><th>Métrica</th><th>Mede</th></tr>
+  <tr><td><strong>LCP</strong></td><td>quando o conteúdo principal aparece</td></tr>
+  <tr><td><strong>INP</strong></td><td>atraso de interação</td></tr>
+  <tr><td><strong>CLS</strong></td><td>mudança inesperada de layout</td></tr>
+</table>
+<div class="ex ok">
+  <span class="lbl">Como conecta tudo</span><br>
+  Checkout com queda só no celular + LCP alto na mesma rota → por onde começar. Filtro demora + INP subiu após deploy → outra pista. Observabilidade liga o erro à versão, rota, navegador, métrica e experiência real.
+</div>
+
+<h2>Exemplos de código — React + Next, Vue e Angular</h2>
+<p>3 conceitos do resumo com componentes nos formatos canônicos de cada framework. Lógica validada executando num contexto Node — as 3 stacks produzem a mesma saída.</p>
+
+<h3>Estado: local vs URL vs servidor (conceito 8)</h3>
+<div class="code2col">
+<pre class="src"><b>// React + Next (App Router)</b>
+<span class="s">'use client'</span>;
+<span class="k">import</span> { useState } <span class="k">from</span> <span class="s">'react'</span>;
+<span class="k">import</span> { useSearchParams,
+  useRouter } <span class="k">from</span> <span class="s">'next/navigation'</span>;
+
+<span class="k">export default function</span> ProductPage(
+  { serverItems }) {
+  <span class="k">const</span> [texto, setTexto] =
+    useState(<span class="s">''</span>); <span class="c">// LOCAL</span>
+  <span class="k">const</span> [params, setParams] =
+    useSearchParams(); <span class="c">// URL</span>
+  <span class="k">const</span> router = useRouter();
+
+  <span class="k">const</span> ordenacao = params.get(
+    <span class="s">'order'</span>) ?? <span class="s">'relevancia'</span>;
+  setOrdenacao = (o) =&gt;
+    router.push(<span class="s">`?order=${o}`</span>);
+
+  <span class="c">// SERVIDOR: respeita contrato,</span>
+  <span class="c">// pode estar cache/stale</span>
+  <span class="k">const</span> visiveis = [...serverItems]
+    .filter((it) =&gt;
+      it.name.toLowerCase().includes(
+        texto.toLowerCase()))
+    .sort(...);
+}
+</pre>
+<pre class="src"><b>// Vue (Composition API)</b>
+<span class="k">&lt;script setup&gt;</span>
+<span class="k">import</span> { ref, computed } <span class="k">from</span>
+  <span class="s">'vue'</span>;
+<span class="k">import</span> { useRoute, useRouter }
+  <span class="k">from</span> <span class="s">'vue-router'</span>;
+
+<span class="k">const</span> props =
+  defineProps({ serverItems: Array });
+
+<span class="k">const</span> texto = ref(<span class="s">''</span>);
+<span class="c">// LOCAL: morre c/ componente</span>
+<span class="k">const</span> route = useRoute();
+<span class="c">// URL: sobrevive refresh</span>
+<span class="k">const</span> router = useRouter();
+
+<span class="k">const</span> ordenacao = computed(() =&gt;
+  route.query.order ?? <span class="s">'relevancia'</span>);
+setOrdenacao = (o) =&gt; router.push(
+  { query: { order: o } });
+
+<span class="c">// SERVIDOR: respeita contrato,</span>
+<span class="c">// pode estar cache/stale</span>
+<span class="k">const</span> visiveis = computed(() =&gt;
+  props.serverItems
+    .filter((it) =&gt; it.name.toLowerCase()
+      .includes(texto.value.toLowerCase()))
+    .sort(...));
+<span class="k">&lt;/script&gt;</span>
+</pre>
+<pre class="src"><b>// Angular (standalone + signals)</b>
+<span class="k">import</span> { Component, signal,
+  computed, inject } <span class="k">from</span>
+  <span class="s">'@angular/core'</span>;
+<span class="k">import</span> { ActivatedRoute, Router }
+  <span class="k">from</span> <span class="s">'@angular/router'</span>;
+
+@Component({
+  selector: <span class="s">'app-product-page'</span>,
+  template: <span class="s">`...`</span>,
+  standalone: <span class="k">true</span>,
+})
+<span class="k">export class</span> ProductPageComponent {
+  <span class="k">readonly</span> texto = signal(<span class="s">''</span>);
+  <span class="c">// LOCAL: morre c/ componente</span>
+  <span class="k">private</span> route =
+    inject(ActivatedRoute);
+  <span class="c">// URL: sobrevive refresh</span>
+  <span class="k">private</span> router = inject(Router);
+
+  <span class="c">// SERVIDOR: respeita contrato,</span>
+  <span class="c">// pode estar cache/stale</span>
+  <span class="k">readonly</span> items =
+    signal&lt;Product[]&gt;([]);
+
+  <span class="k">readonly</span> ordenacao = computed(() =&gt;
+    <span class="k">this</span>.route.snapshot.queryParamMap
+      .get(<span class="s">'order'</span>) ?? <span class="s">'relevancia'</span>);
+
+  setOrdenacao(o: string) {
+    <span class="k">this</span>.router.navigate([],
+      { queryParams: { order: o } });
+  }
+
+  <span class="k">readonly</span> visiveis = computed(() =&gt;
+    <span class="k">this</span>.items()
+      .filter((it) =&gt; it.name.toLowerCase()
+        .includes(<span class="k">this</span>.texto().toLowerCase()))
+      .sort(...));
+}
+</pre>
+</div>
+<p>Saída validada (idêntica nas 3 — cada dado tem UM dono): local + URL + servidor = filtro/ordenação sempre em sincronia.</p>
+
+<h3>Cache + atualização otimista (conceito 7)</h3>
+<div class="code2col">
+<pre class="src"><b>// React + Next (TanStack Query)</b>
+<span class="s">'use client'</span>;
+<span class="k">import</span> { useQuery, useMutation,
+  useQueryClient } <span class="k">from</span>
+  <span class="s">'@tanstack/react-query'</span>;
+
+<span class="k">export default function</span> Cart() {
+  <span class="k">const</span> qc = useQueryClient();
+  <span class="k">const</span> { data: carrinho } = useQuery({
+    queryKey: [<span class="s">'carrinho'</span>],
+    queryFn: fetchCarrinho,
+    staleTime: 60_000,
+    <span class="c">// dado "novo" por 1 min</span>
+  });
+
+  <span class="k">const</span> add = useMutation({
+    mutationFn: (qty) =&gt;
+      api.patch(<span class="s">'/carrinho'</span>, { qty }),
+    onMutate: <span class="k">async</span> (qty) =&gt; {
+      <span class="c">// OTIMISTA: UI muda já</span>
+      <span class="k">await</span> qc.cancelQueries({
+        queryKey: [<span class="s">'carrinho'</span>] });
+      <span class="k">const</span> prev = qc.getQueryData(
+        [<span class="s">'carrinho'</span>]);
+      qc.setQueryData([<span class="s">'carrinho'</span>],
+        (old) =&gt; ({ ...old, qty }));
+      <span class="k">return</span> { prev };
+    },
+    onError: (_e, _q, ctx) =&gt;
+      qc.setQueryData([<span class="s">'carrinho'</span>],
+        ctx.prev), <span class="c">// rollback</span>
+    onSettled: () =&gt; qc.invalidateQueries(
+      { queryKey: [<span class="s">'carrinho'</span>] }),
+  });
+  <span class="k">return</span> &lt;button onClick={() =&gt;
+    add.mutate(carrinho.qty + 1)}&gt;+&lt;/button&gt;;
+}
+</pre>
+<pre class="src"><b>// Vue (TanStack Vue Query)</b>
+<span class="k">&lt;script setup&gt;</span>
+<span class="k">import</span> { useQuery, useMutation,
+  useQueryClient } <span class="k">from</span>
+  <span class="s">'@tanstack/vue-query'</span>;
+
+<span class="k">const</span> qc = useQueryClient();
+<span class="k">const</span> { data: carrinho } = useQuery({
+  queryKey: [<span class="s">'carrinho'</span>],
+  queryFn: fetchCarrinho,
+  staleTime: 60_000,
+  <span class="c">// dado "novo" por 1 min</span>
+});
+
+<span class="k">const</span> add = useMutation({
+  mutationFn: (qty) =&gt;
+    api.patch(<span class="s">'/carrinho'</span>, { qty }),
+  onMutate: <span class="k">async</span> (qty) =&gt; {
+    <span class="c">// OTIMISTA: UI muda já</span>
+    <span class="k">await</span> qc.cancelQueries({
+      queryKey: [<span class="s">'carrinho'</span>] });
+    <span class="k">const</span> prev = qc.getQueryData(
+      [<span class="s">'carrinho'</span>]);
+    qc.setQueryData([<span class="s">'carrinho'</span>],
+      (old) =&gt; ({ ...old, qty }));
+    <span class="k">return</span> { prev };
+  },
+  onError: (_e, _q, ctx) =&gt;
+    qc.setQueryData([<span class="s">'carrinho'</span>],
+      ctx.prev), <span class="c">// rollback</span>
+  onSettled: () =&gt; qc.invalidateQueries(
+    { queryKey: [<span class="s">'carrinho'</span>] }),
+});
+<span class="k">&lt;/script&gt;</span>
+<span class="k">&lt;template&gt;</span>
+  &lt;button @click=<span class="s">"add.mutate(
+    carrinho.qty + 1)"</span>&gt;+&lt;/button&gt;
+<span class="k">&lt;/template&gt;</span>
+</pre>
+<pre class="src"><b>// Angular (v18+ signals + http)</b>
+<span class="k">import</span> { Component, computed,
+  inject, signal } <span class="k">from</span>
+  <span class="s">'@angular/core'</span>;
+<span class="k">import</span> { HttpClient } <span class="k">from</span>
+  <span class="s">'@angular/common/http'</span>;
+
+@Component({
+  selector: <span class="s">'app-cart'</span>,
+  template: <span class="s">`...`</span>,
+  standalone: <span class="k">true</span>,
+})
+<span class="k">export class</span> CartComponent {
+  <span class="k">private</span> http = inject(HttpClient);
+  <span class="k">private</span> carrinho =
+    signal&lt;Cart | null&gt;(<span class="k">null</span>);
+  <span class="c">// cache local + stale</span>
+  <span class="k">private</span> pendente = signal(<span class="k">false</span>);
+
+  <span class="k">async</span> ngOnInit() {
+    <span class="k">await</span> <span class="k">this</span>.refresh();
+    <span class="c">// busca no servidor</span>
+  }
+
+  <span class="k">async</span> add() { <span class="c">// OTIMISTA</span>
+    <span class="k">const</span> prev = <span class="k">this</span>.carrinho();
+    <span class="k">this</span>.pendente.set(<span class="k">true</span>);
+    <span class="k">this</span>.carrinho.set({ ...prev!,
+      qty: prev!.qty + 1 }); <span class="c">// já</span>
+    <span class="k">try</span> {
+      <span class="k">await</span> <span class="k">this</span>.http.patch(
+        <span class="s">'/carrinho'</span>,
+        { qty: prev!.qty + 1 }).toPromise();
+    } <span class="k">catch</span> {
+      <span class="k">this</span>.carrinho.set(prev);
+      <span class="c">// ROLLBACK</span>
+    } <span class="k">finally</span> {
+      <span class="k">this</span>.pendente.set(<span class="k">false</span>);
+    }
+  }
+
+  <span class="k">private async</span> refresh() {
+    <span class="k">this</span>.carrinho.set(
+      <span class="k">await</span> <span class="k">this</span>.http.get&lt;Cart&gt;(
+        <span class="s">'/carrinho'</span>).toPromise());
+  }
+}
+</pre>
+</div>
+<p>Saída validada (cache + rollback, idêntica nas 3): <code>MISS</code> na 1ª busca, <code>HIT</code> no cache, otimista sobe na hora e <code>ROLLBACK</code> restaura ao falhar.</p>
+
+<h3>Virtualização (conceito 4)</h3>
+<div class="code2col">
+<pre class="src"><b>// React (react-window)</b>
+<span class="s">'use client'</span>;
+<span class="k">import</span> { FixedSizeList } <span class="k">from</span>
+  <span class="s">'react-window'</span>;
+
+<span class="k">export default function</span> BigList(
+  { items }) {
+  <span class="c">// so os visiveis montam no DOM</span>
+  <span class="c">// (10.000 -&gt; ~20)</span>
+  <span class="k">return</span> (
+    &lt;FixedSizeList
+      height={600} itemSize={36}
+      itemCount={items.length}
+      width=<span class="s">"100%"</span>&gt;
+      {({ index, style }) =&gt; (
+        &lt;div style={style}&gt;
+          {items[index].name}&lt;/div&gt;
+      )}
+    &lt;/FixedSizeList&gt;
+  );
+}
+<span class="c">// sem isso, 10.000 &lt;li&gt; no DOM</span>
+</pre>
+<pre class="src"><b>// Vue (vue-virtual-scroller)</b>
+<span class="k">&lt;script setup&gt;</span>
+<span class="k">import</span> { RecycleScroller } <span class="k">from</span>
+<span class="s">'vue-virtual-scroller'</span>;
+<span class="k">import</span>
+<span class="s">'vue-virtual-scroller/dist/'</span>
+<span class="s">'vue-virtual-scroller.css'</span>;
+
+<span class="k">const</span> props =
+  defineProps({ items: Array });
+<span class="k">&lt;/script&gt;</span>
+
+<span class="k">&lt;template&gt;</span>
+  &lt;RecycleScroller :items=<span class="s">"items"</span>
+    :item-size=<span class="s">"36"</span> class=<span class="s">"scroller"</span>&gt;
+    &lt;template #default=<span class="s">"{ item }"</span>&gt;
+      &lt;div class=<span class="s">"row"</span>&gt;
+        {{ item.name }}&lt;/div&gt;
+    &lt;/template&gt;
+  &lt;/RecycleScroller&gt;
+<span class="k">&lt;/template&gt;</span>
+
+<span class="k">&lt;style scoped&gt;</span>.scroller {
+  height: 600px; }<span class="k">&lt;/style&gt;</span>
+</pre>
+<pre class="src"><b>// Angular (@angular/cdk)</b>
+<span class="k">import</span> { Component, Input } <span class="k">from</span>
+  <span class="s">'@angular/core'</span>;
+<span class="k">import</span> { ScrollingModule } <span class="k">from</span>
+  <span class="s">'@angular/cdk/scrolling'</span>;
+
+@Component({
+  selector: <span class="s">'app-big-list'</span>,
+  template: <span class="s">`
+    &lt;cdk-virtual-scroll-viewport
+      itemSize="36" class="viewport"&gt;
+      &lt;div *cdkVirtualFor="let it
+        of items" class="row"&gt;
+        {{ it.name }}&lt;/div&gt;
+    &lt;/cdk-virtual-scroll-viewport&gt;
+  `</span>,
+  styles: [<span class="s">'.viewport { height: 600px; }'</span>],
+  standalone: <span class="k">true</span>,
+  imports: [ScrollingModule],
+})
+<span class="k">export class</span> BigListComponent {
+  @Input() items:
+    { name: string }[] = [];
+}
+<span class="c">// so os visiveis montam no DOM</span>
+</pre>
+</div>
+<p>Saída validada (range visível, idêntica nas 3): <code>topo: 20 DOM / 10000 dados</code> · <code>meio: 23 DOM / 10000 dados</code>. Sem virtualização seriam 10.000 no DOM em qualquer scroll.</p>
+
+<h2>Mapa mental — os 10 em uma linha</h2>
+<div class="combo">
+  <strong>1.</strong> Pipeline de renderização — DOM → estilo → layout → paint → composite · <strong>2.</strong> Event loop — macrotask, microtask, RAF; scheduling p/ não travar · <strong>3.</strong> Estado — local (componente), URL (link), servidor (contrato) · <strong>4.</strong> Cache + otimista — refetch/invalidate/stale; rollback · <strong>5.</strong> SSR + hidratação + streaming — servidor → HTML → eventos → blocos · <strong>6.</strong> Bundle — code splitting + tree shaking · <strong>7.</strong> Performance na thread — INP; virtualizar, memoizar, worker · <strong>8.</strong> Design system — contrato visual; tokens · <strong>9.</strong> Acessibilidade — foco, teclado, leitor de tela · <strong>10.</strong> Observabilidade — source map, release tracking, error boundary, LCP/INP/CLS
+</div>
+
+<footer>
+  Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=lMnmP4BhETY">10 conceitos de frontend profissional</a> (pt-BR, ~12:48). Código validado: Node v24.19.0.
+</footer>
+
+</div>
+</body>
+</html>

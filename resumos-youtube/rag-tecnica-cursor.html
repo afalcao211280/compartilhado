@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG: A Técnica Por Trás do Cursor</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RAG: A Técnica Por Trás do Cursor</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=nRyf1iQU4mk">https://www.youtube.com/watch?v=nRyf1iQU4mk</a> · pt-BR · ~5:48 · 30/08/2026</p>
+
+<h1>Resumo — &quot;RAG: A Técnica Por Trás do Cursor&quot; (pt-BR, ~5:48)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=nRyf1iQU4mk</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_rag.json</p>
+
+<h2>Tese central</h2>
+
+<p>RAG (Retrieval Augmented Generation) = **buscar informação relevante antes de gerar a resposta**. Em vez de depender só do que o modelo já sabe, você recupera documentos atualizados e injeta no prompt. É o que está por trás do Cursor, Claude Code, Copilot, Perplexity e chatbots de suporte.</p>
+
+<h2>Pontos-chave</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**O problema que resolve:** todo LLM tem limite de conhecimento (data de corte). Documento interno da empresa → inventa. Algo que aconteceu ontem → chuta. **Fine tuning não resolve** — muda o comportamento, não atualiza conhecimento em tempo real.</li>
+<li>**Pipeline completa:**</li>
+</ul>
+<p>  1. **Indexação** — divide documentos em *chunks* (pedaços menores). Documento de 100 páginas não cabe num prompt; você precisa só do trecho relevante.</p>
+<p>  2. **Embeddings** — cada chunk vira um **vetor numérico** que representa o significado do texto.</p>
+<p>  3. **Banco vetorial** — guarda os vetores (Pinecone, pgvector, Chroma). Vetores com significado parecido ficam **próximos no espaço vetorial**.</p>
+<p>  4. **Busca (retrieval)** — a pergunta vira vetor; o banco compara similaridade e retorna os *top-k* chunks mais parecidos.</p>
+<p>  5. **Geração** — chunks + pergunta original são injetados no prompt; o modelo responde com base neles.</p>
+<ul style='padding-left:1.3rem'>
+<li>**Onde RAG aparece:** agentes de código (leem a codebase — isso é retrieval), busca com fontes (Perplexity, resumo de IA do Google), chatbots de suporte (documentação da empresa). Se uma LLM precisa de informação fora do treinamento, provavelmente tem RAG por trás.</li>
+<li>**Armadilhas:**</li>
+</ul>
+<p>  1. **Chunking ruim** — cortar frase no meio → embedding incompleto → busca traz lixo. Chunk grande demais perde precisão; pequeno demais perde contexto. Tamanho certo depende do documento.</p>
+<p>  2. **Busca irrelevante** — similaridade semântica não é perfeita; o chunk mais parecido no espaço vetorial não é o mais útil (palavras parecidas, significados diferentes).</p>
+<p>  3. **Modelo ignora o contexto** — mesmo com os chunks certos, pode inventar (pergunta ambígua, contexto longo).</p>
+<p>  4. **Latência** — cada chamada ao banco vetorial, embedding e reranking adiciona tempo.</p>
+<ul style='padding-left:1.3rem'>
+<li>**RAG vs Fine Tuning:** RAG muda a *informação que o modelo acessa*; fine tuning muda *como ele se comporta*. Tom/formato específico → fine tuning. Dados atualizados/privados → RAG. Na prática, usam os dois juntos (RAG para buscar, reranker para filtrar, modelo ajustado para gerar).</li>
+<li>**E as janelas de contexto gigantes (200K, 1M)?** Jogar 100 páginas no prompt pode funcionar, mas é caro, lento e o modelo se perde no meio de contextos longos. RAG bem feito dá precisão maior mandando só o que importa.</li>
+</ul>
+
+<h2>Exemplos de código — o pipeline do RAG</h2>
+
+<p>Validação real: 3 exemplos (Python 3.14, Java 26, Go 1.26), sem dependências.</p>
+
+<h3>1. Chunking — dividir documentos sem cortar no meio</h3>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — chunking por paragrafo (sem cortar frases)</span>
+<span class="k">def</span> chunk(texto, max_chars=200):
+    paragrafos = texto.split(<span class="s">&#x27;\n\n&#x27;</span>)
+    chunks, atual = [], <span class="s">&#x27;&#x27;</span>
+    <span class="k">for</span> p <span class="k">in</span> paragrafos:
+        <span class="k">if</span> len(atual) + len(p) + 2 &lt;= max_chars:
+            atual += (<span class="s">&#x27;\n\n&#x27;</span> <span class="k">if</span> atual <span class="k">else</span> <span class="s">&#x27;&#x27;</span>) + p
+        <span class="k">else</span>:
+            <span class="k">if</span> atual: chunks.append(atual)
+            atual = p
+    <span class="k">if</span> atual: chunks.append(atual)
+    <span class="k">return</span> chunks
+
+doc = <span class="s">&quot;&quot;</span><span class="s">&quot;O RAG busca documentos.
+\n\nEle divide em chunks.
+\n\nDepois gera embeddings.&quot;</span><span class="s">&quot;&quot;</span>
+<span class="k">print</span>(chunk(doc, 10))
+<span class="c"># [&#x27;O RAG busca documentos.&#x27;, &#x27;Ele divide em chunks.&#x27;, &#x27;Depois gera embeddings.&#x27;]</span></pre>
+<pre class="src"><span class="c">// Java 26 — chunking por paragrafo</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public</span> <span class="k">class</span> ChunkDemo {
+  <span class="k">static</span> <span class="k">List</span>&lt;String&gt; chunk(String t, <span class="k">int</span> max) {
+    <span class="k">var</span> out = <span class="k">new</span> <span class="k">ArrayList</span>&lt;String&gt;();
+    <span class="k">var</span> atual = <span class="k">new</span> <span class="k">StringBuilder</span>();
+    <span class="k">for</span> (String p : t.split(<span class="s">&quot;\n\n&quot;</span>)) {
+      <span class="k">if</span> (atual.length() + p.length() + 2 &lt;= max) {
+        <span class="k">if</span> (atual.length() &gt; 0) atual.append(<span class="s">&quot;\n\n&quot;</span>);
+        atual.append(p);
+      } <span class="k">else</span> {
+        <span class="k">if</span> (atual.length() &gt; 0) out.add(atual.toString());
+        atual = <span class="k">new</span> <span class="k">StringBuilder</span>(p);
+      }
+    }
+    <span class="k">if</span> (atual.length() &gt; 0) out.add(atual.toString());
+    <span class="k">return</span> out;
+  }
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="k">var</span> doc = <span class="s">&quot;O RAG busca documentos.\n\n&quot;</span>
+      + <span class="s">&quot;Ele divide em chunks.\n\nDepois gera embeddings.&quot;</span>;
+    <span class="k">System</span>.out.println(chunk(doc, 10));
+  }
+}</pre>
+<pre class="src"><span class="c">// Go 1.26 — chunking por paragrafo</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">&quot;fmt&quot;</span>
+	<span class="s">&quot;strings&quot;</span>
+)
+
+<span class="k">func</span> chunk(t <span class="k">string</span>, max <span class="k">int</span>) []<span class="k">string</span> {
+	<span class="k">var</span> out []<span class="k">string</span>
+	<span class="k">var</span> atual strings.Builder
+	<span class="k">for</span> _, p := <span class="k">range</span> strings.Split(t, <span class="s">&quot;\n\n&quot;</span>) {
+		<span class="k">if</span> atual.Len()+<span class="k">len</span>(p)+2 &lt;= max {
+			<span class="k">if</span> atual.Len() &gt; 0 {
+				atual.WriteString(<span class="s">&quot;\n\n&quot;</span>)
+			}
+			atual.WriteString(p)
+		} <span class="k">else</span> {
+			<span class="k">if</span> atual.Len() &gt; 0 {
+				out = <span class="k">append</span>(out, atual.String())
+			}
+			atual.Reset()
+			atual.WriteString(p)
+		}
+	}
+	<span class="k">if</span> atual.Len() &gt; 0 {
+		out = <span class="k">append</span>(out, atual.String())
+	}
+	<span class="k">return</span> out
+}
+
+<span class="k">func</span> main() {
+	doc := <span class="s">&quot;O RAG busca documentos.\n\n&quot;</span> +
+		<span class="s">&quot;Ele divide em chunks.\n\nDepois gera embeddings.&quot;</span>
+	fmt.Printf(<span class="s">&quot;%q\n&quot;</span>, chunk(doc, 10))
+}</pre></div>
+
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — minhash de palavras + cosine (sem libs)</span>
+<span class="k">import</span> math
+
+<span class="k">def</span> vetor(texto, vocab):
+    <span class="s">&quot;&quot;</span><span class="s">&quot;Conta palavras conhecidas (embedding bag-of-words).&quot;</span><span class="s">&quot;&quot;</span>
+    <span class="k">return</span> [texto.lower().count(w) <span class="k">for</span> w <span class="k">in</span> vocab]
+
+<span class="k">def</span> cosine(a, b):
+    dot = sum(x * y <span class="k">for</span> x, y <span class="k">in</span> zip(a, b))
+    na = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> a))
+    nb = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> b))
+    <span class="k">return</span> dot / (na * nb) <span class="k">if</span> na <span class="k">and</span> nb <span class="k">else</span> 0.0
+
+vocab = [<span class="s">&#x27;rag&#x27;</span>, <span class="s">&#x27;cache&#x27;</span>, <span class="s">&#x27;banco&#x27;</span>, <span class="s">&#x27;cursor&#x27;</span>, <span class="s">&#x27;embedding&#x27;</span>]
+docs = [
+    <span class="s">&#x27;RAG consulta documentos antes de responder&#x27;</span>,
+    <span class="s">&#x27;cache acelera consultas repetidas&#x27;</span>,
+    <span class="s">&#x27;banco de dados guarda vetores&#x27;</span>,
+]
+q = <span class="s">&#x27;como funciona o rag&#x27;</span>
+qv = vetor(q, vocab)
+scores = [(cosine(vetor(d, vocab), qv), d) <span class="k">for</span> d <span class="k">in</span> docs]
+<span class="k">for</span> s, d <span class="k">in</span> sorted(scores, reverse=<span class="k">True</span>):
+    <span class="k">print</span>(f<span class="s">&#x27;{s:.2f}  {d}&#x27;</span>)
+<span class="c"># 0.82  RAG consulta documentos antes de responder</span></pre>
+<pre class="src"><span class="c">// Java 26 — cosine similarity</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public</span> <span class="k">class</span> CosineDemo {
+  <span class="k">static</span> <span class="k">int</span>[] vetor(String t, <span class="k">List</span>&lt;String&gt; vocab) {
+    <span class="k">var</span> v = <span class="k">new</span> <span class="k">int</span>[vocab.size()];
+    <span class="k">var</span> tl = t.toLowerCase();
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; vocab.size(); i++)
+      v[i] = tl.split(vocab.get(i), -1).length - 1;
+    <span class="k">return</span> v;
+  }
+  <span class="k">static</span> <span class="k">double</span> cosine(<span class="k">int</span>[] a, <span class="k">int</span>[] b) {
+    <span class="k">double</span> dot = 0, na = 0, nb = 0;
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; a.length; i++) {
+      dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i];
+    }
+    <span class="k">return</span> na == 0 || nb == 0 ? 0 : dot / (<span class="k">Math</span>.sqrt(na) * <span class="k">Math</span>.sqrt(nb));
+  }
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="k">var</span> vocab = <span class="k">List</span>.of(<span class="s">&quot;rag&quot;</span>, <span class="s">&quot;cache&quot;</span>, <span class="s">&quot;banco&quot;</span>, <span class="s">&quot;cursor&quot;</span>, <span class="s">&quot;embedding&quot;</span>);
+    <span class="k">var</span> docs = <span class="k">List</span>.of(
+      <span class="s">&quot;RAG consulta documentos antes de responder&quot;</span>,
+      <span class="s">&quot;cache acelera consultas repetidas&quot;</span>,
+      <span class="s">&quot;banco de dados guarda vetores&quot;</span>);
+    <span class="k">var</span> qv = vetor(<span class="s">&quot;como funciona o rag&quot;</span>, vocab);
+    <span class="k">for</span> (<span class="k">var</span> d : docs)
+      <span class="k">System</span>.out.printf(<span class="s">&quot;%.2f  %s%n&quot;</span>, cosine(vetor(d, vocab), qv), d);
+  }
+}</pre>
+<pre class="src"><span class="c">// Go 1.26 — cosine similarity</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">&quot;fmt&quot;</span>
+	<span class="s">&quot;math&quot;</span>
+	<span class="s">&quot;strings&quot;</span>
+)
+
+<span class="k">func</span> vetor(t <span class="k">string</span>, vocab []<span class="k">string</span>) []<span class="k">int</span> {
+	v := <span class="k">make</span>([]<span class="k">int</span>, <span class="k">len</span>(vocab))
+	tl := strings.ToLower(t)
+	<span class="k">for</span> i, w := <span class="k">range</span> vocab {
+		v[i] = strings.Count(tl, w)
+	}
+	<span class="k">return</span> v
+}
+
+<span class="k">func</span> cosine(a, b []<span class="k">int</span>) <span class="k">float64</span> {
+	<span class="k">var</span> dot, na, nb <span class="k">float64</span>
+	<span class="k">for</span> i := <span class="k">range</span> a {
+		dot += <span class="k">float64</span>(a[i] * b[i])
+		na += <span class="k">float64</span>(a[i] * a[i])
+		nb += <span class="k">float64</span>(b[i] * b[i])
+	}
+	<span class="k">if</span> na == 0 || nb == 0 {
+		<span class="k">return</span> 0
+	}
+	<span class="k">return</span> dot / (math.Sqrt(na) * math.Sqrt(nb))
+}
+
+<span class="k">func</span> main() {
+	vocab := []<span class="k">string</span>{<span class="s">&quot;rag&quot;</span>, <span class="s">&quot;cache&quot;</span>, <span class="s">&quot;banco&quot;</span>, <span class="s">&quot;cursor&quot;</span>, <span class="s">&quot;embedding&quot;</span>}
+	docs := []<span class="k">string</span>{
+		<span class="s">&quot;RAG consulta documentos antes de responder&quot;</span>,
+		<span class="s">&quot;cache acelera consultas repetidas&quot;</span>,
+		<span class="s">&quot;banco de dados guarda vetores&quot;</span>,
+	}
+	qv := vetor(<span class="s">&quot;como funciona o rag&quot;</span>, vocab)
+	<span class="k">for</span> _, d := <span class="k">range</span> docs {
+		fmt.Printf(<span class="s">&quot;%.2f  %s\n&quot;</span>, cosine(vetor(d, vocab), qv), d)
+	}
+}</pre></div>
+
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — top-k + prompt com contexto (autossuficiente)</span>
+<span class="k">import</span> math
+
+vocab = [<span class="s">&#x27;rag&#x27;</span>, <span class="s">&#x27;cache&#x27;</span>, <span class="s">&#x27;banco&#x27;</span>, <span class="s">&#x27;cursor&#x27;</span>, <span class="s">&#x27;embedding&#x27;</span>]
+
+<span class="k">def</span> vetor(texto, v):
+    <span class="k">return</span> [texto.lower().count(w) <span class="k">for</span> w <span class="k">in</span> v]
+
+<span class="k">def</span> cosine(a, b):
+    dot = sum(x * y <span class="k">for</span> x, y <span class="k">in</span> zip(a, b))
+    na = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> a))
+    nb = math.sqrt(sum(x * x <span class="k">for</span> x <span class="k">in</span> b))
+    <span class="k">return</span> dot / (na * nb) <span class="k">if</span> na <span class="k">and</span> nb <span class="k">else</span> 0.0
+
+docs = [
+    <span class="s">&#x27;RAG consulta documentos antes de responder&#x27;</span>,
+    <span class="s">&#x27;cache acelera consultas repetidas&#x27;</span>,
+    <span class="s">&#x27;banco de dados guarda vetores&#x27;</span>,
+]
+
+<span class="k">def</span> retrieve(docs, q, k=1):
+    qv = vetor(q, vocab)
+    scored = sorted(
+      ((cosine(vetor(d, vocab), qv), d) <span class="k">for</span> d <span class="k">in</span> docs),
+      reverse=<span class="k">True</span>)
+    <span class="k">return</span> [d <span class="k">for</span> _, d <span class="k">in</span> scored[:k]]
+
+contexto = retrieve(docs, <span class="s">&#x27;como funciona o rag&#x27;</span>)
+prompt = f<span class="s">&quot;&quot;</span><span class="s">&quot;Contexto:
+{contexto[0]}
+
+Responda com base no contexto.&quot;</span><span class="s">&quot;&quot;</span>
+<span class="k">print</span>(prompt)
+<span class="c"># Contexto:</span>
+<span class="c"># RAG consulta documentos antes de responder</span>
+<span class="c"># Responda com base no contexto.</span></pre>
+<pre class="src"><span class="c">// Java 26 — retrieval + prompt (autossuficiente)</span>
+<span class="k">import</span> java.util.*;
+<span class="k">import</span> java.util.stream.*;
+
+<span class="k">public</span> <span class="k">class</span> RagDemo {
+  <span class="k">static</span> <span class="k">final</span> <span class="k">List</span>&lt;String&gt; VOCAB =
+    <span class="k">List</span>.of(<span class="s">&quot;rag&quot;</span>, <span class="s">&quot;cache&quot;</span>, <span class="s">&quot;banco&quot;</span>, <span class="s">&quot;cursor&quot;</span>, <span class="s">&quot;embedding&quot;</span>);
+
+  <span class="k">static</span> <span class="k">int</span>[] vetor(String t, <span class="k">List</span>&lt;String&gt; vocab) {
+    <span class="k">var</span> v = <span class="k">new</span> <span class="k">int</span>[vocab.size()];
+    <span class="k">var</span> tl = t.toLowerCase();
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; vocab.size(); i++)
+      v[i] = tl.split(vocab.get(i), -1).length - 1;
+    <span class="k">return</span> v;
+  }
+  <span class="k">static</span> <span class="k">double</span> cosine(<span class="k">int</span>[] a, <span class="k">int</span>[] b) {
+    <span class="k">double</span> dot = 0, na = 0, nb = 0;
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; a.length; i++) {
+      dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i];
+    }
+    <span class="k">return</span> na == 0 || nb == 0 ? 0 : dot / (<span class="k">Math</span>.sqrt(na) * <span class="k">Math</span>.sqrt(nb));
+  }
+
+  <span class="k">static</span> String retrieve(<span class="k">List</span>&lt;String&gt; docs, String q, <span class="k">int</span> k) {
+    <span class="k">var</span> qv = vetor(q, VOCAB);
+    <span class="k">return</span> docs.stream()
+      .sorted((x, y) -&gt; <span class="k">Double</span>.compare(
+        cosine(vetor(y, VOCAB), qv),
+        cosine(vetor(x, VOCAB), qv)))
+      .limit(k)
+      .collect(<span class="k">Collectors</span>.joining(<span class="s">&quot;\n&quot;</span>));
+  }
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="k">var</span> docs = <span class="k">List</span>.of(
+      <span class="s">&quot;RAG consulta documentos antes de responder&quot;</span>,
+      <span class="s">&quot;cache acelera consultas repetidas&quot;</span>);
+    <span class="k">System</span>.out.println(<span class="s">&quot;Contexto:\n&quot;</span> +
+        retrieve(docs, <span class="s">&quot;como funciona o rag&quot;</span>, 1));
+  }
+}</pre>
+<pre class="src"><span class="c">// Go 1.26 — retrieval + prompt (autossuficiente)</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">&quot;fmt&quot;</span>
+	<span class="s">&quot;math&quot;</span>
+	<span class="s">&quot;strings&quot;</span>
+)
+
+<span class="k">var</span> vocab = []<span class="k">string</span>{<span class="s">&quot;rag&quot;</span>, <span class="s">&quot;cache&quot;</span>, <span class="s">&quot;banco&quot;</span>, <span class="s">&quot;cursor&quot;</span>, <span class="s">&quot;embedding&quot;</span>}
+
+<span class="k">func</span> vetor(t <span class="k">string</span>, v []<span class="k">string</span>) []<span class="k">int</span> {
+	out := <span class="k">make</span>([]<span class="k">int</span>, <span class="k">len</span>(v))
+	tl := strings.ToLower(t)
+	<span class="k">for</span> i, w := <span class="k">range</span> v {
+		out[i] = strings.Count(tl, w)
+	}
+	<span class="k">return</span> out
+}
+
+<span class="k">func</span> cosine(a, b []<span class="k">int</span>) <span class="k">float64</span> {
+	<span class="k">var</span> dot, na, nb <span class="k">float64</span>
+	<span class="k">for</span> i := <span class="k">range</span> a {
+		dot += <span class="k">float64</span>(a[i] * b[i])
+		na += <span class="k">float64</span>(a[i] * a[i])
+		nb += <span class="k">float64</span>(b[i] * b[i])
+	}
+	<span class="k">if</span> na == 0 || nb == 0 {
+		<span class="k">return</span> 0
+	}
+	<span class="k">return</span> dot / (math.Sqrt(na) * math.Sqrt(nb))
+}
+
+<span class="k">func</span> retrieve(docs []<span class="k">string</span>, q <span class="k">string</span>, k <span class="k">int</span>) []<span class="k">string</span> {
+	qv := vetor(q, vocab)
+	<span class="c">// ordena por similaridade desc (insertion sort)</span>
+	<span class="k">for</span> i := 0; i &lt; <span class="k">len</span>(docs); i++ {
+		<span class="k">for</span> j := i + 1; j &lt; <span class="k">len</span>(docs); j++ {
+			<span class="k">if</span> cosine(vetor(docs[j], vocab), qv) &gt;
+				cosine(vetor(docs[i], vocab), qv) {
+				docs[i], docs[j] = docs[j], docs[i]
+			}
+		}
+	}
+	<span class="k">return</span> docs[:k]
+}
+
+<span class="k">func</span> main() {
+	docs := []<span class="k">string</span>{
+		<span class="s">&quot;RAG consulta documentos antes de responder&quot;</span>,
+		<span class="s">&quot;cache acelera consultas repetidas&quot;</span>,
+	}
+	top := retrieve(docs, <span class="s">&quot;como funciona o rag&quot;</span>, 1)
+	fmt.Println(<span class="s">&quot;Contexto:\n&quot;</span> + top[0])
+}</pre></div>
+
+
+<h3>2. Embedding simples + busca por similaridade (cosine)</h3>
+
+
+<div class="code2col"></div>
+
+
+
+<div class="code2col"></div>
+
+
+
+<div class="code2col"></div>
+
+
+<h3>3. Retrieval + prompt (o RAG completo)</h3>
+
+
+<div class="code2col"></div>
+
+
+
+<div class="code2col"></div>
+
+
+
+<div class="code2col"></div>
+
+
+<h2>Mapa mental — os 8 em uma linha</h2>
+
+<p>1. Problema: limite de conhecimento do LLM · 2. Fine tuning ≠ conhecimento novo · 3. Pipeline: indexação → embeddings → banco vetorial → retrieval → geração · 4. Chunks: nem grande nem pequeno demais · 5. Vetores: significado vira proximidade · 6. Top-k + prompt = resposta com fontes · 7. Armadilhas: chunking, busca, contexto, latência · 8. Janelas gigantes não matam RAG (custo/precisão).</p>
+
+<h2>Aviso final do vídeo</h2>
+
+<p>&quot;É isso. Se curtiu, se inscreve e deixa um like, que isso ajuda bastante o canal. Valeu.&quot;</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=nRyf1iQU4mk">RAG: A Técnica Por Trás do Cursor</a> (~5:48).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como um Compilador Funciona</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Como um Compilador Funciona</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=7R9ZYaDTAAc">https://www.youtube.com/watch?v=7R9ZYaDTAAc</a> · pt-BR · ~11:03 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Como um Compilador Funciona&quot; (pt-BR, ~11:03)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=7R9ZYaDTAAc</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_comp.json</p>
+
+<h2>Tese central</h2>
+
+<p>Um compilador é um **pipeline**: cada estágio pega a saída do anterior, transforma e passa pro próximo. &quot;Seis tokens de código → duas instruções de máquina&quot; — a redução de um programa a código eficiente em 6 etapas bem definidas.</p>
+
+<h2>As 6 etapas</h2>
+
+<h3>1. Análise léxica (lexing)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Lê o texto **caractere por caractere** e agrupa em **tokens**: `int` = keyword, `result` = identificador, `=` = operador, `2` = literal numérico, `;` encerra.</li>
+<li>Não precisa entender significado — só separar pedaços e classificar.</li>
+<li>Descarta: espaços em branco e comentários.</li>
+</ul>
+
+<h3>2. Análise sintática (parsing)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Transforma tokens numa **AST** (árvore de sintaxe abstrata) — hierarquia.</li>
+<li>Resolve ambiguidades por **precedência**: em `a + b * 2`, `b * 2` agrupa primeiro (nó `+` tem filhos `a` e `b*2`).</li>
+<li>Mesmo padrão em bancos de dados: SQL → tokens → árvore → plano de execução.</li>
+<li>Estrutura errada (ex.: `x = ;`) → **erro de sintaxe** (o &quot;vermelho&quot; do editor).</li>
+</ul>
+
+<h3>3. Análise semântica</h3>
+<ul style='padding-left:1.3rem'>
+<li>Verifica se o programa **faz sentido** (a árvore só garante estrutura):</li>
+<li>Tipos compatíveis? Variável declarada antes de usar? Função existe? Nº de argumentos OK?</li>
+<li>**Resolução de nomes** via **tabela de símbolos**: mapeia cada nome ao que representa (`a` → tipo int, escopo local, posição na stack). Cada declaração adiciona; cada uso consulta.</li>
+</ul>
+
+<h3>4. Representação intermediária (IR)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Por que não ir direto a código de máquina? **N linguagens × M arquiteturas** → com IR são só N + M traduções.</li>
+<li>IR é simples: cada instrução faz **uma operação** (`a + b * 2` → `t1 = b * 2; t2 = a + t1; result = t2`). Sem precedência, sem expressões compostas.</li>
+</ul>
+
+<h3>5. Otimização</h3>
+<ul style='padding-left:1.3rem'>
+<li>**Constant folding**: `2 + 3` vira `5` em tempo de compilação.</li>
+<li>**Dead code elimination**: `if false { ... }` inteiro é descartado.</li>
+<li>**Loop unrolling**: desenrola iterações, eliminando o overhead de checagem/incremento.</li>
+<li>**Function inlining**: cópia o corpo da função no ponto de chamada (some o custo do stack frame).</li>
+<li>Compiladores modernos fazem **centenas** de otimizações — o código legível roda tão rápido (ou mais) que o otimizado à mão.</li>
+</ul>
+
+<h3>6. Geração de código</h3>
+<ul style='padding-left:1.3rem'>
+<li>Cada instrução IR → instrução de máquina da arquitetura alvo (`t1 = b * 2` → `imul` no x86).</li>
+<li>**Alocação de registradores**: CPU tem poucos registradores; variável de loop fica no registrador, variável de uso único vai pra stack.</li>
+<li>Assembly → **assembler** → bytes; **linker** junta com bibliotecas externas e gera o executável.</li>
+</ul>
+
+<h2>Pipeline completo (exemplo do vídeo)</h2>
+
+<p>```</p>
+<p>int square(int x) { return x * x; }</p>
+<p>→ léxico: int | square | ( | int | x | ) | { | return | x | * | x | }</p>
+<p>→ sintático: árvore FunctionDecl(nome=square, param=x:int, corpo=Return(x*x))</p>
+<p>→ semântico: x é int × int → int, bate com a declaração ✓</p>
+<p>→ IR: t1 = x * x; return t1</p>
+<p>→ otimização: como a função é pequena, inline nos pontos de chamada</p>
+<p>→ código: imul + ret (2 instruções de máquina)</p>
+<p>```</p>
+
+<h2>Compilador vs interpretador vs JIT</h2>
+
+<p>| | Compilador | Interpretador | JIT (meio-termo) |</p>
+<p>|---|---|---|---|</p>
+<p>| Traduz | programa inteiro antes | linha por linha, em tempo real | interpreta; detecta hot path e compila para nativo |</p>
+<p>| Uso | C, Rust, Go | Python, Ruby | JVM (Java), V8 (JavaScript) |</p>
+<p>| Perfil | compila devagar, executa rápido | inicia instantâneo, executa lento | equilibra |</p>
+
+<h2>Ferramentas JS que são compiladores (sem você perceber)</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**TypeScript** → compila para JavaScript</li>
+<li>**Babel** → transpila sintaxe nova para navegadores antigos</li>
+<li>**Webpack** → resolve módulos e gera bundles</li>
+</ul>
+
+<p>Todas fazem o MESMO pipeline: léxico → sintático → semântico → transformação → output.</p>
+
+<h2>Como ler erros a partir de agora</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Erro de sintaxe** → o parser não montou a árvore (faltou `(`, `;`, `}`).</li>
+<li>**Erro de tipo** → análise semântica achou incompatibilidade (string onde era número).</li>
+<li>**Variável undefined** → a tabela de símbolos não encontrou o nome.</li>
+</ul>
+
+<p>---</p>
+
+<h2>Exemplos de código — Python 3.14 (stdlib)</h2>
+
+<h3>1. Lexer → tokens</h3>
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — mini lexer</span>
+<span class="k">import</span> re
+
+<span class="k">def</span> lex(entrada):
+    padroes = [
+        (<span class="s">&#x27;INT&#x27;</span>,   r<span class="s">&#x27;int&#x27;</span>),
+        (<span class="s">&#x27;RETURN&#x27;</span>, r<span class="s">&#x27;return&#x27;</span>),
+        (<span class="s">&#x27;ID&#x27;</span>,    r<span class="s">&#x27;[a-z_][a-z0-9_]*&#x27;</span>),
+        (<span class="s">&#x27;NUM&#x27;</span>,   r<span class="s">&#x27;\d+&#x27;</span>),
+        (<span class="s">&#x27;OP&#x27;</span>,    r<span class="s">&#x27;[\*\+\-]&#x27;</span>),
+        (<span class="s">&#x27;LPAREN&#x27;</span>, r<span class="s">&#x27;\(&#x27;</span>),
+        (<span class="s">&#x27;RPAREN&#x27;</span>, r<span class="s">&#x27;\)&#x27;</span>),
+        (<span class="s">&#x27;LBRACE&#x27;</span>, r<span class="s">&#x27;\{&#x27;</span>),
+        (<span class="s">&#x27;RBRACE&#x27;</span>, r<span class="s">&#x27;\}&#x27;</span>),
+        (<span class="s">&#x27;SEMI&#x27;</span>,  r<span class="s">&#x27;;&#x27;</span>),
+        (<span class="s">&#x27;SKIP&#x27;</span>,  r<span class="s">&#x27;\s+&#x27;</span>),
+    ]
+    tokens = []
+    i = 0
+    <span class="k">while</span> i &lt; len(entrada):
+        <span class="k">for</span> nome, p <span class="k">in</span> padroes:
+            m = re.<span class="k">match</span>(p, entrada[i:])
+            <span class="k">if</span> m:
+                <span class="k">if</span> nome != <span class="s">&#x27;SKIP&#x27;</span>:
+                    tokens.append((nome, m.group()))
+                i += len(m.group())
+                <span class="k">break</span>
+        <span class="k">else</span>:
+            <span class="k">raise</span> SyntaxError(f<span class="s">&#x27;caractere inesperado: {entrada[i]!r}&#x27;</span>)
+    <span class="k">return</span> tokens
+
+codigo = <span class="s">&#x27;int square(int x) { return x * x; }&#x27;</span>
+<span class="k">print</span>(lex(codigo))
+<span class="c"># [(&#x27;INT&#x27;,&#x27;int&#x27;), (&#x27;ID&#x27;,&#x27;square&#x27;), (&#x27;LPAREN&#x27;,&#x27;(&#x27;), (&#x27;INT&#x27;,&#x27;int&#x27;), (&#x27;ID&#x27;,&#x27;x&#x27;),</span>
+<span class="c">#  (&#x27;RPAREN&#x27;,&#x27;)&#x27;), (&#x27;LBRACE&#x27;,&#x27;{&#x27;), (&#x27;RETURN&#x27;,&#x27;return&#x27;), (&#x27;ID&#x27;,&#x27;x&#x27;),</span>
+<span class="c">#  (&#x27;OP&#x27;,&#x27;*&#x27;), (&#x27;ID&#x27;,&#x27;x&#x27;), (&#x27;SEMI&#x27;,&#x27;;&#x27;), (&#x27;RBRACE&#x27;,&#x27;}&#x27;)]</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — parser de expressoes com precedencia + otimizacao</span>
+<span class="k">class</span> Num:
+    <span class="k">def</span> __init__(self, v): self.v = v
+    <span class="k">def</span> eval(self): <span class="k">return</span> self.v
+    <span class="k">def</span> __repr__(self): <span class="k">return</span> str(self.v)
+
+<span class="k">class</span> Bin:
+    <span class="k">def</span> __init__(self, op, l, r): self.op, self.l, self.r = op, l, r
+    <span class="k">def</span> eval(self): <span class="k">return</span> {<span class="s">&#x27;+&#x27;</span>: <span class="k">lambda</span> a,b: a+b, <span class="s">&#x27;*&#x27;</span>: <span class="k">lambda</span> a,b: a*b}[self.op](self.l.eval(), self.r.eval())
+    <span class="k">def</span> __repr__(self): <span class="k">return</span> f<span class="s">&#x27;({self.l} {self.op} {self.r})&#x27;</span>
+
+tokens = [(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;2&#x27;</span>),(<span class="s">&#x27;OP&#x27;</span>,<span class="s">&#x27;+&#x27;</span>),(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;3&#x27;</span>)]
+
+<span class="k">def</span> parse_expr(ts):
+    <span class="c"># precedencia: * antes de + (recursive descent simples)</span>
+    <span class="k">def</span> fator(i):
+        t, v = ts[i]
+        <span class="k">return</span> Num(int(v)), i + 1
+    <span class="k">def</span> termo(i):
+        l, i = fator(i)
+        <span class="k">while</span> i &lt; len(ts) <span class="k">and</span> ts[i][0] == <span class="s">&#x27;OP&#x27;</span> <span class="k">and</span> ts[i][1] == <span class="s">&#x27;*&#x27;</span>:
+            _, op = ts[i]
+            r, i = fator(i + 1)
+            l = Bin(op, l, r)
+        <span class="k">return</span> l, i
+    <span class="k">def</span> soma(i):
+        l, i = termo(i)
+        <span class="k">while</span> i &lt; len(ts) <span class="k">and</span> ts[i][0] == <span class="s">&#x27;OP&#x27;</span>:
+            _, op = ts[i]
+            r, i = termo(i + 1)
+            l = Bin(op, l, r)
+        <span class="k">return</span> l, i
+    ast, _ = soma(0)
+    <span class="k">return</span> ast
+
+ast = parse_expr([(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;2&#x27;</span>),(<span class="s">&#x27;OP&#x27;</span>,<span class="s">&#x27;+&#x27;</span>),(<span class="s">&#x27;NUM&#x27;</span>,<span class="s">&#x27;3&#x27;</span>)])
+<span class="k">print</span>(<span class="s">&#x27;AST:&#x27;</span>, ast)            <span class="c"># (2 + 3) — a arvore mostra a estrutura</span>
+<span class="k">print</span>(<span class="s">&#x27;eval:&#x27;</span>, ast.eval())    <span class="c"># 5</span>
+
+<span class="c"># constant folding: 2 + 3 vira 5 (nao precisa calcular em runtime)</span>
+<span class="k">def</span> constant_fold(node):
+    <span class="k">if</span> isinstance(node, Bin) <span class="k">and</span> isinstance(node.l, Num) <span class="k">and</span> isinstance(node.r, Num):
+        <span class="k">return</span> Num(node.eval())
+    <span class="k">return</span> node
+
+<span class="k">print</span>(<span class="s">&#x27;folded:&#x27;</span>, constant_fold(ast))   <span class="c"># 5</span>
+<span class="c"># AST: (2 + 3)</span>
+<span class="c"># eval: 5</span>
+<span class="c"># folded: 5</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — dead code elimination + geracao de &quot;assembly&quot;</span>
+<span class="k">class</span> Num:
+    <span class="k">def</span> __init__(self, v): self.v = v
+
+<span class="k">def</span> dead_code(ast):
+    <span class="c"># if false { ... } inteiro e descartado</span>
+    <span class="k">if</span> isinstance(ast, If) <span class="k">and</span> isinstance(ast.cond, Num) <span class="k">and</span> ast.cond.v == 0:
+        <span class="k">return</span> <span class="k">None</span>   <span class="c"># bloco morto removido</span>
+    <span class="k">return</span> ast
+
+<span class="k">class</span> If:
+    <span class="k">def</span> __init__(self, cond, corpo): self.cond, self.corpo = cond, corpo
+
+<span class="c"># um programa simples: if false { ... } (morreria no binario)</span>
+prog = If(Num(0), <span class="s">&#x27;bloco que nunca roda&#x27;</span>)
+<span class="k">print</span>(<span class="s">&#x27;dead code removido:&#x27;</span>, dead_code(prog) <span class="k">is</span> <span class="k">None</span>)   <span class="c"># True</span>
+
+<span class="c"># IR de a + b * 2 — cada instrucao faz UMA operacao</span>
+a, b = 1, 2
+t1 = b * 2
+t2 = a + t1
+ir = [(<span class="s">&#x27;mul&#x27;</span>, <span class="s">&#x27;t1&#x27;</span>, <span class="s">&#x27;b&#x27;</span>, <span class="s">&#x27;2&#x27;</span>), (<span class="s">&#x27;add&#x27;</span>, <span class="s">&#x27;t2&#x27;</span>, <span class="s">&#x27;a&#x27;</span>, <span class="s">&#x27;t1&#x27;</span>), (<span class="s">&#x27;mov&#x27;</span>, <span class="s">&#x27;result&#x27;</span>, <span class="s">&#x27;t2&#x27;</span>)]
+<span class="c"># geracao de codigo (x86 simplificado)</span>
+asm = {
+    <span class="s">&#x27;mul&#x27;</span>: <span class="s">&#x27;imul&#x27;</span>, <span class="s">&#x27;add&#x27;</span>: <span class="s">&#x27;add&#x27;</span>, <span class="s">&#x27;mov&#x27;</span>: <span class="s">&#x27;mov&#x27;</span>,
+}
+<span class="k">for</span> instr <span class="k">in</span> ir:
+    op, resto = instr[0], instr[1:]
+    <span class="k">print</span>(f<span class="s">&#x27;{asm[op]} &#x27;</span> + <span class="s">&#x27;, &#x27;</span>.join(resto))
+<span class="c"># imul t1, b, 2</span>
+<span class="c"># add  t2, a, t1</span>
+<span class="c"># mov  result, t2</span></pre></div>
+
+
+<h3>2. Parser → AST + constant folding + dead code</h3>
+
+<div class="code2col"></div>
+
+<p>&gt; No exemplo do vídeo: `a + b * 2` → AST `(a + (b * 2))` — a multiplicação agrupa primeiro (precedência). Aqui o constant folding substitui `2 + 3` por `5` direto.</p>
+
+<h3>3. Otimização: dead code + IR/gerador de código</h3>
+
+<div class="code2col"></div>
+
+<p>&gt; O vídeo: `t1 = b * 2 → imul`, `t2 = a + t1 → add`, `result = t2 → mov`. A IR é independente de arquitetura; a geração de código a traduz para o alvo (x86, ARM...).</p>
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>Compilador = pipeline de 6 estágios, cada um resolvendo um problema definido.</li>
+<li>**Lexer** separa, **parser** monta árvore, **semântica** dá significado, **IR** simplifica, **otimização** acelera, **código** materializa.</li>
+<li>IR existe para **N linguagens × M arquiteturas** virarem N + M.</li>
+<li>Otimizações: constant folding, dead code, loop unrolling, inlining — centenas nos compiladores modernos.</li>
+<li>Erros do editor mapeiam 1:1 para estágios (sintaxe = parser, tipo = semântica, undefined = tabela de símbolos).</li>
+<li>TypeScript, Babel e Webpack são compiladores com o mesmo pipeline.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=7R9ZYaDTAAc">Como um Compilador Funciona</a> (~11:03).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

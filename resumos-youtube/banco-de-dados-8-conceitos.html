@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumo — 8 conceitos que fazem um Banco de Dados funcionar</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --fg: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --accent2: #f0883e;
+    --code-bg: #0a0e14; --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6; }
+  .wrap { max-width: 100%; padding: 2rem 2.5rem; margin: 0 auto; }
+  h1 { font-size: 1.7rem; color: var(--accent); }
+  h2 { font-size: 1.25rem; color: var(--accent); margin-top: 2rem;
+    border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.05rem; color: var(--accent2); }
+  a { color: var(--accent); }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .combo { background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .combo strong { color: var(--accent); }
+  .code2col { display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem; margin: 1rem 0; }
+  @media (max-width: 1100px) { .code2col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px)  { .code2col { grid-template-columns: 1fr; } }
+  .src { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: .9rem 1rem; overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: .82rem; line-height: 1.5; margin: 0; }
+  .k { color: #ff7b72; } .t { color: #79c0ff; } .s { color: #a5d6ff; }
+  .c { color: #8b949e; font-style: italic; }
+  footer { margin-top: 3rem; padding-top: 1rem;
+    border-top: 1px solid var(--border); color: var(--muted);
+    font-size: .85rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resumo — "8 conceitos que fazem um Banco de Dados funcionar"</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=wNM8wETFss4">youtube.com/watch?v=wNM8wETFss4</a> · pt-BR · ~11:40 · 30/08/2026</p>
+  <p><strong>Tese central:</strong> você confirma um Pix e em milissegundos o banco muda bytes na memória, grava um log no disco e <em>promete que o dado não vai sumir</em>. Como uma mensagem do back end vira dado persistido, por dentro.</p>
+
+  <h2>Pontos-chave</h2>
+  <div class="combo">
+    <p><strong>1. Processo + conexão.</strong> SELECT lê; INSERT/UPDATE/DELETE muda estado. Por baixo: achar dados, controlar quem vê/muda, sobreviver a falhas.</p>
+    <p><strong>2. Páginas.</strong> Banco não busca linha solta — usa blocos (páginas). Linhas espalhadas = lento; próximas = barato. Modelagem + índices definem o caminho.</p>
+    <p><strong>3. Buffer pool.</strong> Cache interno de páginas. Hit = na memória; miss = disco. Primeira query mais lenta, depois rápida. Dirty page: memória mudou, disco ainda não.</p>
+    <p><strong>4. WAL.</strong> Grava a mudança no log <em>antes</em> da página final. Commit OK depende do log, não do arquivo de dados.</p>
+    <p><strong>5. Durabilidade.</strong> Após queda, replay do log: refaz confirmadas, descarta não confirmadas.</p>
+    <p><strong>6. Transações.</strong> BEGIN/COMMIT/ROLLBACK — todas as mudanças juntas ou nada.</p>
+    <p><strong>7. Concorrência.</strong> Locks travam dados; MVCC mantém versões antigas (leitura não bloqueia escrita). Read Committed vs Repeatable Read = qual versão você vê.</p>
+    <p><strong>8. Índices + manutenção.</strong> B-tree acha sem varrer páginas; mas custa escrita. Vacuum/checkpoint/recovery são o trabalho de bastidor.</p>
+  </div>
+
+  <h2>Exemplos de código — os 3 pilares</h2>
+  <p>3 exemplos (Python 3.14, Java 26, Go 1.26), sem dependências, validados por execução.</p>
+
+  <h3>1. WAL: log antes do commit</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Python 3.14 — write-ahead log</span>
+<span class="k">import</span> json, os
+
+LOG = <span class="s">'/tmp/wal.log'</span>
+
+<span class="k">def</span> write_wal(tx_id, entries):
+    <span class="s">"""Grava ANTES de mudar o
+    'disco' (arquivo de dados)."""</span>
+    <span class="k">with</span> <span class="t">open</span>(LOG, <span class="s">'a'</span>) <span class="k">as</span> f:
+        f.write(json.dumps({<span class="s">'tx'</span>: tx_id,
+            <span class="s">'entries'</span>: entries}) + <span class="s">'\n'</span>)
+
+<span class="k">def</span> apply(entries):
+    <span class="s">"""Aplica no arquivo de dados
+    (pode ser depois)."""</span>
+    data = {}
+    <span class="k">if</span> os.path.exists(
+        <span class="s">'/tmp/data.json'</span>):
+        data = json.load(<span class="t">open</span>(
+            <span class="s">'/tmp/data.json'</span>))
+    <span class="k">for</span> k, v <span class="k">in</span> entries.items():
+        data[k] = data.get(k, 0) + v
+    json.dump(data, <span class="t">open</span>(
+        <span class="s">'/tmp/data.json'</span>, <span class="s">'w'</span>))
+
+<span class="k">def</span> commit(tx_id, entries):
+    write_wal(tx_id, entries) <span class="c"># 1</span>
+    apply(entries)             <span class="c"># 2</span>
+    <span class="k">return</span> <span class="s">'commit OK'</span>
+
+<span class="c"># simula queda entre log e apply</span>
+write_wal(<span class="s">'tx-1'</span>,
+  {<span class="s">'a'</span>: -100, <span class="s">'b'</span>: 100})
+<span class="t">print</span>(<span class="s">'caiu antes do apply —'
+  ' log tem o registro'</span>)
+<span class="t">print</span>(<span class="t">open</span>(LOG).read().strip())</pre>
+    <pre class="src"><span class="c">// Java 26 — WAL</span>
+<span class="k">import</span> java.nio.file.*;
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> WalDemo {
+  <span class="k">static</span> <span class="t">void</span> wal(<span class="t">String</span> tx,
+      <span class="t">String</span> entries)
+      <span class="k">throws</span> <span class="t">Exception</span> {
+    <span class="c">// grava ANTES</span>
+    <span class="t">Files</span>.writeString(
+        <span class="t">Path</span>.of(<span class="s">"/tmp/wal.log"</span>),
+        tx + <span class="s">" "</span> + entries +
+        <span class="s">"\n"</span>,
+        <span class="t">StandardOpenOption</span>.CREATE,
+        <span class="t">StandardOpenOption</span>.APPEND);
+  }
+  <span class="k">public static void</span> main(
+      <span class="t">String</span>[] a)
+      <span class="k">throws</span> <span class="t">Exception</span> {
+    wal(<span class="s">"tx-1"</span>,
+      <span class="s">"{\"a\":-100,\"b\":100}"</span>);
+    wal(<span class="s">"tx-2"</span>,
+      <span class="s">"{\"a\":50,\"b\":-50}"</span>);
+    <span class="t">System</span>.out.println(
+      <span class="s">"log (replay na subida):"</span>);
+    <span class="t">System</span>.out.println(
+      <span class="t">Files</span>.readString(
+        <span class="t">Path</span>.of(
+          <span class="s">"/tmp/wal.log"</span>)));
+  }
+}</pre>
+    <pre class="src"><span class="c">// Go 1.26 — WAL</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"os"</span>
+)
+
+<span class="k">func</span> wal(tx, entry <span class="t">string</span>) {
+    f, _ := os.OpenFile(
+        <span class="s">"/tmp/wal.log"</span>,
+        os.O_APPEND|os.O_CREATE|
+        os.O_WRONLY, 0o644)
+    <span class="k">defer</span> f.Close()
+    fmt.Fprintf(f, <span class="s">"%s %s\n"</span>,
+        tx, entry)
+}
+
+<span class="k">func</span> main() {
+    wal(<span class="s">"tx-1"</span>,
+      <span class="s">`{"a":-100,"b":100}`</span>)
+    wal(<span class="s">"tx-2"</span>,
+      <span class="s">`{"a":50,"b":-50}`</span>)
+    fmt.Println(<span class="s">"log (replay:"</span>)
+    b, _ := os.ReadFile(
+        <span class="s">"/tmp/wal.log"</span>)
+    fmt.Print(string(b))
+}</pre>
+  </div>
+
+  <h3>2. Transação: tudo ou nada</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Python 3.14</span>
+<span class="k">class</span> Transacao:
+    <span class="k">def</span> __init__(self, saldos):
+        self.saldos = saldos
+        self._backup = <span class="k">None</span>
+    <span class="k">def</span> begin(self):
+        self._backup = dict(self.saldos)
+    <span class="k">def</span> debitar(self, c, v):
+        <span class="k">if</span> self.saldos[c] &lt; v:
+            <span class="k">raise</span> <span class="t">ValueError</span>(
+                <span class="s">'saldo insuficiente'</span>)
+        self.saldos[c] -= v
+    <span class="k">def</span> creditar(self, c, v):
+        self.saldos[c] += v
+    <span class="k">def</span> commit(self):
+        self._backup = <span class="k">None</span>
+    <span class="k">def</span> rollback(self):
+        self.saldos = dict(self._backup)
+
+t = Transacao(
+    {<span class="s">'a'</span>: 100, <span class="s">'b'</span>: 0})
+t.begin()
+t.debitar(<span class="s">'a'</span>, 100)
+t.creditar(<span class="s">'b'</span>, 100)
+t.commit()
+<span class="t">print</span>(t.saldos)
+<span class="c"># {'a': 0, 'b': 100}</span>
+
+t.begin()
+<span class="k">try</span>:
+    t.debitar(<span class="s">'a'</span>, 999)
+<span class="k">except</span> <span class="t">ValueError</span>:
+    t.rollback()
+<span class="t">print</span>(t.saldos)
+<span class="c"># volta ao estado anterior</span></pre>
+    <pre class="src"><span class="c">// Java 26</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> TxDemo {
+  <span class="k">static class</span> Tx {
+    <span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; saldos;
+    <span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; backup = <span class="k">null</span>;
+    Tx(<span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">Integer</span>&gt; s) { saldos = s; }
+    <span class="t">void</span> begin() {
+      backup = <span class="k">new</span> <span class="t">HashMap</span>&lt;&gt;(saldos); }
+    <span class="t">void</span> debitar(<span class="t">String</span> c, <span class="t">int</span> v) {
+      <span class="k">if</span> (saldos.get(c) &lt; v)
+        <span class="k">throw</span> <span class="k">new</span> <span class="t">IllegalArgumentException</span>();
+      saldos.put(c, saldos.get(c) - v); }
+    <span class="t">void</span> creditar(
+      <span class="t">String</span> c, <span class="t">int</span> v) {
+      saldos.put(c,
+        saldos.get(c) + v); }
+    <span class="t">void</span> commit() {
+      backup = <span class="k">null</span>; }
+    <span class="t">void</span> rollback() {
+      saldos.clear();
+      saldos.putAll(backup); }
+  }
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    <span class="k">var</span> t = <span class="k">new</span> Tx(
+      <span class="k">new</span> <span class="t">HashMap</span>&lt;&gt;(
+        <span class="t">Map</span>.of(<span class="s">"a"</span>, 100,
+          <span class="s">"b"</span>, 0)));
+    t.begin(); t.debitar(<span class="s">"a"</span>, 100);
+    t.creditar(<span class="s">"b"</span>, 100);
+    t.commit();
+    <span class="t">System</span>.out.println(
+      t.saldos);
+    t.begin();
+    <span class="k">try</span> { t.debitar(
+      <span class="s">"a"</span>, 999); }
+    <span class="k">catch</span> (<span class="t">IllegalArgumentException</span>
+      e) { t.rollback(); }
+    <span class="t">System</span>.out.println(
+      t.saldos);
+  }
+}</pre>
+    <pre class="src"><span class="c">// Go 1.26</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+    <span class="s">"fmt"</span>
+    <span class="s">"log"</span>
+)
+
+<span class="k">type</span> Tx <span class="k">struct</span> {
+    saldos map[<span class="t">string</span>]<span class="t">int</span>
+    backup map[<span class="t">string</span>]<span class="t">int</span>
+}
+
+<span class="k">func</span> (t *Tx) begin() {
+    t.backup = clone(t.saldos) }
+<span class="k">func</span> (t *Tx) debitar(
+    c <span class="t">string</span>, v <span class="t">int</span>) {
+    <span class="k">if</span> t.saldos[c] &lt; v {
+        log.Fatal(
+        <span class="s">"saldo insuficiente"</span>)
+    }
+    t.saldos[c] -= v }
+<span class="k">func</span> (t *Tx) creditar(
+    c <span class="t">string</span>, v <span class="t">int</span>) {
+    t.saldos[c] += v }
+<span class="k">func</span> (t *Tx) commit() {
+    t.backup = <span class="k">nil</span> }
+<span class="k">func</span> (t *Tx) rollback() {
+    t.saldos = clone(t.backup) }
+
+<span class="k">func</span> clone(m map[<span class="t">string</span>]<span class="t">int</span>) map[<span class="t">string</span>]<span class="t">int</span> {
+    out := make(
+      map[<span class="t">string</span>]<span class="t">int</span>,
+      len(m))
+    <span class="k">for</span> k, v <span class="k">:= range</span> m {
+        out[k] = v }
+    <span class="k">return</span> out
+}
+
+<span class="k">func</span> main() {
+    t := &Tx{saldos:
+      map[<span class="t">string</span>]<span class="t">int</span>{
+        <span class="s">"a"</span>: 100, <span class="s">"b"</span>: 0}}
+    t.begin()
+    t.debitar(<span class="s">"a"</span>, 100)
+    t.creditar(<span class="s">"b"</span>, 100)
+    t.commit()
+    fmt.Println(t.saldos)
+    t.begin()
+    t.rollback()
+    fmt.Println(t.saldos)
+}</pre>
+  </div>
+
+  <h3>3. MVCC: leitura não bloqueia escrita</h3>
+  <div class="code2col">
+    <pre class="src"><span class="c"># Python 3.14 — MVCC simulado</span>
+<span class="k">class</span> MVCC:
+    <span class="k">def</span> __init__(self):
+        self.versions = {}
+    <span class="k">def</span> write(self, key,
+      value, tx_id):
+        self.versions.setdefault(
+          key, []).append(
+            (value, tx_id))
+    <span class="k">def</span> read(self, key, tx_id):
+        <span class="k">for</span> value, wtx <span class="k">in</span> reversed(
+            self.versions[key]):
+            <span class="k">if</span> wtx &lt;= tx_id:
+                <span class="k">return</span> value
+        <span class="k">return</span> <span class="k">None</span>
+
+db = MVCC()
+db.write(<span class="s">'saldo'</span>, 100, 1)
+db.write(<span class="s">'saldo'</span>, 90, 2)
+<span class="t">print</span>(db.read(
+  <span class="s">'saldo'</span>, 1)) <span class="c"># 100</span>
+<span class="t">print</span>(db.read(
+  <span class="s">'saldo'</span>, 2)) <span class="c"># 90</span></pre>
+    <pre class="src"><span class="c">// Java 26 — MVCC simulado</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public class</span> MvccDemo {
+  <span class="k">record</span> Ver(
+    <span class="t">int</span> value, <span class="t">int</span> tx) {}
+  <span class="k">static</span> <span class="t">Map</span>&lt;<span class="t">String</span>,
+    <span class="t">List</span>&lt;Ver&gt;&gt; versions =
+    <span class="k">new</span> <span class="t">HashMap</span>&lt;&gt;();
+
+  <span class="k">static</span> <span class="t">void</span> write(
+    <span class="t">String</span> k, <span class="t">int</span> v,
+    <span class="t">int</span> tx) {
+    versions.computeIfAbsent(k,
+      x -&gt; <span class="k">new</span> <span class="t">ArrayList</span>&lt;&gt;())
+      .add(<span class="k">new</span> Ver(v, tx));
+  }
+  <span class="k">static</span> <span class="t">Integer</span> read(
+    <span class="t">String</span> k, <span class="t">int</span> tx) {
+    <span class="k">var</span> list = versions.get(k);
+    <span class="k">if</span> (list == <span class="k">null</span>)
+      <span class="k">return</span> <span class="k">null</span>;
+    <span class="k">for</span> (<span class="t">int</span> i =
+      list.size() - 1; i &gt;= 0; i--)
+      <span class="k">if</span> (list.get(i).tx() &lt;= tx)
+        <span class="k">return</span>
+          list.get(i).value();
+    <span class="k">return</span> <span class="k">null</span>;
+  }
+  <span class="k">public static void</span> main(
+    <span class="t">String</span>[] a) {
+    write(<span class="s">"saldo"</span>, 100, 1);
+    write(<span class="s">"saldo"</span>, 90, 2);
+    <span class="t">System</span>.out.println(
+      read(<span class="s">"saldo"</span>, 1));
+    <span class="t">System</span>.out.println(
+      read(<span class="s">"saldo"</span>, 2));
+  }
+}</pre>
+    <pre class="src"><span class="c">// Go 1.26 — MVCC simulado</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">"fmt"</span>
+
+<span class="k">type</span> Ver <span class="k">struct</span> {
+    value <span class="t">int</span>
+    tx    <span class="t">int</span>
+}
+
+<span class="k">var</span> versions =
+  map[<span class="t">string</span>][]Ver{}
+
+<span class="k">func</span> write(
+    k <span class="t">string</span>, v, tx <span class="t">int</span>) {
+    versions[k] = append(
+      versions[k], Ver{v, tx})
+}
+
+<span class="k">func</span> read(k <span class="t">string</span>,
+    tx <span class="t">int</span>) (<span class="t">int</span>, <span class="t">bool</span>) {
+    list := versions[k]
+    <span class="k">for</span> i := len(list) - 1;
+        i &gt;= 0; i-- {
+        <span class="k">if</span> list[i].tx &lt;= tx {
+            <span class="k">return</span> list[i].value, <span class="k">true</span>
+        }
+    }
+    <span class="k">return</span> 0, <span class="k">false</span>
+}
+
+<span class="k">func</span> main() {
+    write(<span class="s">"saldo"</span>, 100, 1)
+    write(<span class="s">"saldo"</span>, 90, 2)
+    fmt.Println(read(
+      <span class="s">"saldo"</span>, 1)) <span class="c">// 100</span>
+    fmt.Println(read(
+      <span class="s">"saldo"</span>, 2)) <span class="c">// 90</span>
+}</pre>
+  </div>
+
+  <h2>Mapa mental — os 8 em uma linha</h2>
+  <div class="combo">
+    <p><strong>1.</strong> Páginas (blocos de linhas) · <strong>2.</strong> Buffer pool (cache de páginas) · <strong>3.</strong> WAL (log antes do commit) · <strong>4.</strong> Durabilidade (replay na subida) · <strong>5.</strong> Transações (tudo ou nada) · <strong>6.</strong> Locks + MVCC · <strong>7.</strong> Isolamento (qual versão você vê) · <strong>8.</strong> Índices + vacuum + checkpoint (manutenção).</p>
+  </div>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=wNM8wETFss4">"8 conceitos que fazem um Banco de Dados funcionar"</a> (pt-BR, ~11:40). Código validado: Python 3.14.7, OpenJDK 26.0.2.1, Go 1.26.6.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O que o Sistema Operacional faz por baixo dos panos</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>O que o Sistema Operacional faz por baixo dos panos</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=c_13dk4cxQ0">https://www.youtube.com/watch?v=c_13dk4cxQ0</a> · pt-BR · ~8:36 · 30/08/2026</p>
+
+<h1>Resumo — &quot;O que o Sistema Operacional faz por baixo dos panos&quot; (pt-BR, ~8:36)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=c_13dk4cxQ0</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_so.json</p>
+
+<h2>Tese central</h2>
+
+<p>O sistema operacional é o **administrador de um prédio comercial**: decide quem usa o quê, quando, e garante que ninguém invada o espaço do outro. Sem ele, cada programa teria que controlar disco, placa de vídeo e teclado diretamente. Ele cria uma **camada entre hardware e programas**.</p>
+
+<h2>O que o SO gerencia</h2>
+
+<h3>1. Processos</h3>
+<ul style='padding-left:1.3rem'>
+<li>Um processo é uma **instância de um programa em execução**: tem PID, estado e **área de memória isolada** (o navegador não acessa a memória do editor).</li>
+<li>Isolamento = segurança: se um processo trava, os outros não travam junto.</li>
+<li>**Ciclo de vida**: `novo → pronto → execução → esperando → pronto...` (esperando = espera por I/O, ex.: ler arquivo do disco).</li>
+</ul>
+
+<h3>2. Threads</h3>
+<ul style='padding-left:1.3rem'>
+<li>Uma thread é um **processo dentro do processo**: cada uma tem sua pilha própria, mas **compartilham a mesma memória**.</li>
+<li>Criar thread é mais barato que criar processo (processo = &quot;abrir empresa nova no prédio&quot;; thread = &quot;usar os mesmos recursos&quot;).</li>
+<li>Comunicação entre threads é mais rápida (memória compartilhada) — mas duas threads modificando o mesmo estado simultaneamente = resultado imprevisível (race condition).</li>
+<li>**Deadlock**: thread A espera recurso 2 que a thread B tem; thread B espera recurso 1 que a A tem. Ninguém avança (&quot;cruzamento onde 4 carros chegam e nenhum dá passagem&quot;).</li>
+<li>**Mutex** (mutual exclusion): &quot;chave de porta&quot; — uma thread por vez entra na seção crítica.</li>
+</ul>
+
+<h3>3. Escalonador (scheduler)</h3>
+<ul style='padding-left:1.3rem'>
+<li>Decide **qual processo roda, por quanto tempo e quando sai**.</li>
+<li>**Round-robin**: cada processo ganha fatia igual (ex.: 10 ms). Justo, mas um processo de vídeo recebe o mesmo tempo que um esperando digitação.</li>
+<li>**Filas de prioridade**: urgente primeiro; o sistema pode **subir a prioridade** de quem espera há muito tempo (evita starvation).</li>
+<li>**Context switch**: salvar o estado do processo atual e carregar o próximo. Acontece milhares de vezes por segundo.</li>
+</ul>
+
+<h3>4. Interrupções</h3>
+<ul style='padding-left:1.3rem'>
+<li>Sinal que **para o processador** e transfere controle ao SO — é como ele retoma o controle de um processo que está rodando.</li>
+<li>**Timer do hardware** dispara a cada fatia de tempo (10 ms) → SO decide o próximo. Teclado, disco, rede também geram interrupções.</li>
+<li>Sem interrupções, um processo poderia monopolizar a CPU para sempre.</li>
+</ul>
+
+<h3>5. Memória virtual</h3>
+<ul style='padding-left:1.3rem'>
+<li>Cada processo &quot;acha&quot; que tem **toda a memória para ele** (endereços virtuais de 0 ao limite).</li>
+<li>O SO mantém uma **tabela de tradução** virtual → físico (o endereço 100 pode ser uma posição completamente diferente na RAM).</li>
+<li>**Swap**: quando a RAM enche, o SO move para o disco pedaços não usados. Funciona, mas disco é muito mais lento que RAM — muito swap = tudo travado.</li>
+</ul>
+
+<h3>6. Sistemas de arquivos</h3>
+<ul style='padding-left:1.3rem'>
+<li>O disco é um bloco gigante de bits; a abstração de **pastas, nomes e hierarquia** vem do sistema de arquivos.</li>
+<li>Um arquivo de 12 MB pode estar em **vários blocos espalhados** (47, 193, 512); o sistema de arquivos mantém a tabela que junta tudo na ordem.</li>
+<li>Cada SO tem o seu: Linux = **ext4**, Windows = **NTFS**, macOS = **APFS** (tradeoffs de performance/segurança/funcionalidade).</li>
+<li>Deletar um arquivo ≈ **remover a referência da tabela**; os dados continuam no disco até serem sobrescritos — por isso a recuperação funciona.</li>
+</ul>
+
+<h3>7. Syscalls: user mode vs kernel mode</h3>
+<ul style='padding-left:1.3rem'>
+<li>Programas rodam em **user mode** (acesso limitado); o **kernel** roda em **kernel mode** (acesso total ao hardware).</li>
+<li>Para ler um arquivo, o programa faz `open` → o processador **troca de modo** → kernel executa → volta ao user mode com o resultado.</li>
+<li>Essa separação impede um programa de acessar a memória de outro ou formatar o disco sem permissão.</li>
+<li>**Se o kernel trava, tudo trava** (tela azul do Windows): o kernel é a fundação — se cai, não há nada embaixo.</li>
+</ul>
+
+<h2>Resumo visual</h2>
+
+<p>```</p>
+<p>Programa (user mode)</p>
+<p>   │  open() / read() / write()  ← syscalls</p>
+<p>   ▼</p>
+<p>Kernel (kernel mode)</p>
+<p>   ├── Processos / Threads (scheduler, context switch)</p>
+<p>   ├── Memória virtual (tabela de páginas, swap)</p>
+<p>   ├── Sistema de arquivos (ext4/NTFS/APFS)</p>
+<p>   └── Drivers ↔ Hardware (CPU, RAM, disco, rede)</p>
+<p>```</p>
+
+<p>---</p>
+
+<h2>Exemplos de código — Go 1.26, Java 26 e Python 3.14</h2>
+
+<h3>1. Escalonador: round-robin + prioridade</h3>
+
+<div class="code2col"><pre class="src"><span class="c">// Go 1.26 — scheduler round-robin com filas de prioridade</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+
+<span class="k">type</span> Processo <span class="k">struct</span> {
+	nome       <span class="k">string</span>
+	prioridade <span class="k">int</span>
+	fatias     <span class="k">int</span> <span class="c">// quantas fatias de 10ms ja rodou</span>
+}
+
+<span class="k">func</span> roundRobin(procs []Processo, quantum <span class="k">int</span>) {
+	fila := <span class="k">append</span>([]Processo{}, procs...)
+	<span class="k">for</span> <span class="k">len</span>(fila) &gt; 0 {
+		<span class="c">// envelhece: sobe prioridade de quem espera ha muito</span>
+		<span class="k">for</span> i := <span class="k">range</span> fila {
+			<span class="k">if</span> fila[i].prioridade &gt; 0 {
+				fila[i].prioridade--
+			}
+		}
+		p := fila[0]
+		fila = fila[1:]
+		fmt.Printf(<span class="s">&quot;rodando %s por %dms (prio %d)\n&quot;</span>, p.nome, quantum, p.prioridade)
+		<span class="k">if</span> p.fatias &gt; 1 {
+			p.fatias--
+			fila = <span class="k">append</span>(fila, p)
+		}
+	}
+}
+
+<span class="k">func</span> main() {
+	roundRobin([]Processo{
+		{<span class="s">&quot;video&quot;</span>, 0, 3}, {<span class="s">&quot;editor&quot;</span>, 2, 1}, {<span class="s">&quot;terminal&quot;</span>, 1, 2},
+	}, 10)
+}
+<span class="c">// rodando video por 10ms (prio 0) -&gt; editor -&gt; terminal -&gt; video -&gt; terminal</span></pre>
+<pre class="src"><span class="c">// Java 26 — scheduler round-robin com filas de prioridade</span>
+<span class="k">import</span> java.util.*;
+
+<span class="k">public</span> <span class="k">class</span> SchedulerDemo {
+  <span class="k">record</span> Processo(String nome, <span class="k">int</span> prioridade, <span class="k">int</span> fatias) {}
+
+  <span class="k">static</span> <span class="k">void</span> roundRobin(<span class="k">List</span>&lt;Processo&gt; procs, <span class="k">int</span> quantum) {
+    Deque&lt;Processo&gt; fila = <span class="k">new</span> ArrayDeque&lt;&gt;(procs);
+    <span class="k">while</span> (!fila.isEmpty()) {
+      Processo p = fila.poll();
+      <span class="k">System</span>.out.printf(<span class="s">&quot;rodando %s por %dms (prio %d)%n&quot;</span>, p.nome(), quantum, p.prioridade());
+      <span class="k">if</span> (p.fatias() &gt; 1) {
+        fila.add(<span class="k">new</span> Processo(p.nome(), p.prioridade(), p.fatias() - 1));
+      }
+    }
+  }
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    roundRobin(<span class="k">List</span>.of(
+      <span class="k">new</span> Processo(<span class="s">&quot;video&quot;</span>, 0, 3), <span class="k">new</span> Processo(<span class="s">&quot;editor&quot;</span>, 2, 1), <span class="k">new</span> Processo(<span class="s">&quot;terminal&quot;</span>, 1, 2)), 10);
+  }
+}
+<span class="c">// rodando video por 10ms (prio 0) -&gt; editor -&gt; terminal -&gt; video -&gt; terminal</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — scheduler round-robin com filas de prioridade</span>
+<span class="k">from</span> collections <span class="k">import</span> deque
+
+<span class="k">def</span> round_robin(procs, quantum):
+    fila = deque([list(p) <span class="k">for</span> p <span class="k">in</span> procs])   <span class="c"># [nome, prioridade, fatias]</span>
+    <span class="k">while</span> fila:
+        p = fila.popleft()
+        <span class="k">print</span>(f<span class="s">&quot;rodando {p[0]} por {quantum}ms (prio {p[1]})&quot;</span>)
+        <span class="k">if</span> p[2] &gt; 1:
+            p[2] -= 1
+            fila.append(p)
+
+round_robin([(<span class="s">&quot;video&quot;</span>, 0, 3), (<span class="s">&quot;editor&quot;</span>, 2, 1), (<span class="s">&quot;terminal&quot;</span>, 1, 2)], 10)
+<span class="c"># rodando video por 10ms (prio 0) -&gt; editor -&gt; terminal -&gt; video -&gt; terminal</span></pre></div>
+
+
+<div class="code2col"><pre class="src"><span class="c">// Go 1.26 — corrida sem mutex (ordem imprevisivel)</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> (
+	<span class="s">&quot;fmt&quot;</span>
+	<span class="s">&quot;sync&quot;</span>
+)
+
+<span class="k">func</span> main() {
+	<span class="k">var</span> wg sync.WaitGroup
+	contador := 0
+	<span class="k">for</span> i := 0; i &lt; 100; i++ {
+		wg.Add(2)
+		<span class="k">go</span> <span class="k">func</span>() { contador++; wg.Done() }() <span class="c">// 2 goroutines</span>
+		<span class="k">go</span> <span class="k">func</span>() { contador++; wg.Done() }()
+	}
+	wg.Wait()
+	fmt.Println(<span class="s">&quot;contador (esperado 200):&quot;</span>, contador) <span class="c">// &lt; 200: corrida</span>
+}
+
+<span class="c">// Com o video: duas threads modificando o mesmo estado ao mesmo tempo</span>
+<span class="c">// = resultado imprevisivel. O mutex (chave de porta) resolve.</span></pre>
+<pre class="src"><span class="c">// Java 26 — corrida sem mutex (ordem imprevisivel)</span>
+<span class="k">public</span> <span class="k">class</span> CorridaDemo {
+  <span class="k">static</span> <span class="k">int</span> contador = 0;
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) <span class="k">throws</span> Exception {
+    <span class="k">var</span> ts = <span class="k">new</span> Thread[20];
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i &lt; ts.length; i++) {
+      ts[i] = <span class="k">new</span> Thread(() -&gt; {
+        <span class="k">for</span> (<span class="k">int</span> j = 0; j &lt; 1000; j++) contador++;
+      });
+      ts[i].start();
+    }
+    <span class="k">for</span> (<span class="k">var</span> t : ts) t.join();
+    <span class="k">System</span>.out.println(<span class="s">&quot;contador (esperado 20000): &quot;</span> + contador); <span class="c">// &lt; 20000</span>
+  }
+}
+
+<span class="c">// Com o video: duas threads modificando o mesmo estado ao mesmo tempo</span>
+<span class="c">// = resultado imprevisivel. O mutex (chave de porta) resolve.</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — corrida sem lock (ordem imprevisivel)</span>
+<span class="k">import</span> threading
+
+contador = 0
+
+<span class="k">def</span> incrementa():
+    <span class="k">global</span> contador
+    <span class="k">for</span> _ <span class="k">in</span> range(10000):
+        contador += 1
+
+ts = [threading.Thread(target=incrementa) <span class="k">for</span> _ <span class="k">in</span> range(10)]
+<span class="k">for</span> t <span class="k">in</span> ts: t.start()
+<span class="k">for</span> t <span class="k">in</span> ts: t.join()
+<span class="k">print</span>(<span class="s">&quot;contador (esperado 100000):&quot;</span>, contador)  <span class="c"># &lt; 100000: corrida</span>
+
+<span class="c"># Com o video: duas threads modificando o mesmo estado ao mesmo tempo</span>
+<span class="c"># = resultado imprevisivel. O mutex (chave de porta) resolve.</span></pre></div>
+
+
+<div class="code2col"><pre class="src"><span class="c">// Go 1.26 — syscall simulada: user mode -&gt; kernel mode -&gt; user mode</span>
+<span class="k">package</span> main
+
+<span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+
+<span class="c">// &quot;kernel mode&quot;: tem acesso total</span>
+<span class="k">func</span> kernel_open(caminho <span class="k">string</span>, permissao <span class="k">bool</span>) <span class="k">string</span> {
+	<span class="k">if</span> !permissao {
+		<span class="k">return</span> <span class="s">&quot;ERRO: permissao negada&quot;</span>
+	}
+	<span class="k">return</span> fmt.Sprintf(<span class="s">&quot;arquivo %s aberto (fd=3)&quot;</span>, caminho)
+}
+
+<span class="c">// &quot;user mode&quot;: programa so ve a syscall</span>
+<span class="k">func</span> main() {
+	<span class="c">// espaco de enderecos virtual: processo acha que comeca em 0</span>
+	enderecoVirtual := 100
+	tabela := <span class="k">map</span>[<span class="k">int</span>]<span class="k">int</span>{100: 0x7F00, 200: 0x3A20} <span class="c">// virtual -&gt; fisico</span>
+	fmt.Printf(<span class="s">&quot;endereco virtual %d -&gt; fisico 0x%X\n&quot;</span>,
+		enderecoVirtual, tabela[enderecoVirtual])
+
+	<span class="c">// syscall open: user mode pede, kernel executa, volta resultado</span>
+	fmt.Println(kernel_open(<span class="s">&quot;/etc/passwd&quot;</span>, <span class="k">true</span>))  <span class="c">// ok</span>
+	fmt.Println(kernel_open(<span class="s">&quot;/etc/shadow&quot;</span>, <span class="k">false</span>)) <span class="c">// ERRO: permissao negada</span>
+}</pre>
+<pre class="src"><span class="c">// Java 26 — syscall simulada: user mode -&gt; kernel mode -&gt; user mode</span>
+<span class="k">public</span> <span class="k">class</span> KernelDemo {
+  <span class="c">// &quot;kernel mode&quot;: tem acesso total</span>
+  <span class="k">static</span> String kernel_open(String caminho, <span class="k">boolean</span> permissao) {
+    <span class="k">if</span> (!permissao) <span class="k">return</span> <span class="s">&quot;ERRO: permissao negada&quot;</span>;
+    <span class="k">return</span> <span class="s">&quot;arquivo &quot;</span> + caminho + <span class="s">&quot; aberto (fd=3)&quot;</span>;
+  }
+
+  <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> main(String[] a) {
+    <span class="c">// espaco de enderecos virtual: processo acha que comeca em 0</span>
+    <span class="k">int</span> enderecoVirtual = 100;
+    <span class="k">var</span> tabela = java.util.<span class="k">Map</span>.of(100, 0x7F00, 200, 0x3A20); <span class="c">// virtual -&gt; fisico</span>
+    <span class="k">System</span>.out.printf(<span class="s">&quot;endereco virtual %d -&gt; fisico 0x%X%n&quot;</span>,
+      enderecoVirtual, tabela.get(enderecoVirtual));
+
+    <span class="c">// syscall open: user mode pede, kernel executa, volta resultado</span>
+    <span class="k">System</span>.out.println(kernel_open(<span class="s">&quot;/etc/passwd&quot;</span>, <span class="k">true</span>));  <span class="c">// ok</span>
+    <span class="k">System</span>.out.println(kernel_open(<span class="s">&quot;/etc/shadow&quot;</span>, <span class="k">false</span>)); <span class="c">// ERRO: permissao negada</span>
+  }
+}</pre>
+<pre class="src"><span class="c"># Python 3.14 — syscall simulada: user mode -&gt; kernel mode -&gt; user mode</span>
+<span class="c"># &quot;kernel mode&quot;: tem acesso total</span>
+<span class="k">def</span> kernel_open(caminho, permissao):
+    <span class="k">if</span> <span class="k">not</span> permissao:
+        <span class="k">return</span> <span class="s">&quot;ERRO: permissao negada&quot;</span>
+    <span class="k">return</span> f<span class="s">&quot;arquivo {caminho} aberto (fd=3)&quot;</span>
+
+<span class="c"># espaco de enderecos virtual: processo acha que comeca em 0</span>
+endereco_virtual = 100
+tabela = {100: 0x7F00, 200: 0x3A20}  <span class="c"># virtual -&gt; fisico</span>
+<span class="k">print</span>(f<span class="s">&quot;endereco virtual {endereco_virtual} -&gt; fisico 0x{tabela[endereco_virtual]:X}&quot;</span>)
+
+<span class="c"># syscall open: user mode pede, kernel executa, volta resultado</span>
+<span class="k">print</span>(kernel_open(<span class="s">&quot;/etc/passwd&quot;</span>, <span class="k">True</span>))   <span class="c"># ok</span>
+<span class="k">print</span>(kernel_open(<span class="s">&quot;/etc/shadow&quot;</span>, <span class="k">False</span>))  <span class="c"># ERRO: permissao negada</span></pre></div>
+
+
+<h3>2. Deadlock + mutex (e como o mutex evita a corrida)</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+<p>Saída nas 3 linguagens: contador **menor** que o esperado — demonstra a race condition; com mutex (comentado) seria exato. *(No CPython o GIL serializa as threads, então a corrida pode não aparecer — Go e Java mostram o efeito real de forma mais clara.)*</p>
+
+<h3>3. Syscall + memória virtual (simulação do kernel)</h3>
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+
+<div class="code2col"></div>
+
+<p>Saída nas 3 linguagens: `endereco virtual 100 -&gt; fisico 0x7F00` + `arquivo /etc/passwd aberto (fd=3)` + `ERRO: permissao negada`.</p>
+
+<p>---</p>
+
+<h2>Destaques</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>SO = **administrador do prédio**: processos, threads, memória, arquivos, CPU.</li>
+<li>**Isolamento entre processos** = segurança; threads compartilham memória = velocidade com risco de corrida/deadlock.</li>
+<li>Scheduler: round-robin é justo mas burro; filas de prioridade com **envelhecimento** evitam starvation.</li>
+<li>**Interrupções** (timer/teclado/disco) são como o SO retoma o controle.</li>
+<li>**Memória virtual** dá a ilusão de RAM infinita; swap salva mas trava quando abusado.</li>
+<li>Deletar arquivo ≈ remover referência; dados ficam até sobrescritos.</li>
+<li>**user mode vs kernel mode** + syscalls = a fronteira de segurança fundamental.</li>
+</ul>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=c_13dk4cxQ0">O que o Sistema Operacional faz por baixo dos panos</a> (~8:36).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

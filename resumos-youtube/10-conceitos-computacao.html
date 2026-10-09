@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 Conceitos que São a Base de Tudo na Computação</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>10 Conceitos que São a Base de Tudo na Computação</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=zLV586SXHsU">https://www.youtube.com/watch?v=zLV586SXHsU</a> · pt-BR · ~10:46 · 30/08/2026</p>
+
+<h1>Resumo — &quot;10 Conceitos que São a Base de Tudo na Computação&quot; (pt-BR, ~10:46)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=zLV586SXHsU</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_comp10.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Tudo na computação — de IA a um simples `print` — se resume a **10 ideias fundamentais** que existem há décadas e não mudaram. Linguagens e frameworks mudam; esses conceitos, não. Quem entende a essência de cada um enxerga padrões em qualquer tecnologia nova.</p>
+
+<h2>10. Binário e lógica booleana</h2>
+
+<p>Tudo que o computador processa — texto, imagem, som — no fundo é uma sequência de **zeros e uns**. A letra `A` é bits; uma foto são milhões de números representando a cor de cada pixel.</p>
+
+<p>Para manipular bits, três operações: **AND, OR, NOT** (lógica booleana). Combinando essas três, dá para construir **qualquer coisa**: calculadoras, memória, processadores inteiros. Cada circuito do computador é uma combinação de portas lógicas.</p>
+
+<h2>9. Estruturas de dados</h2>
+
+<p>Ter dados em binário é só o começo — o que importa é **como você organiza**. 1.000 nomes, achar um específico:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Lista**: olha um por um → 1.000 comparações no pior caso.</li>
+<li>**Árvore binária de busca**: divide pela metade a cada passo → ~10 comparações.</li>
+<li>**Hash table**: uma comparação direto no endereço certo.</li>
+</ul>
+
+<p>Cada estrutura tem tradeoffs: array é rápido por índice; lista encadeada insere rápido no meio; árvore busca rápido quando ordenada. **A escolha da estrutura muda tudo no desempenho.**</p>
+
+<h2>8. Complexidade de algoritmos (Big O)</h2>
+
+<p>Conforme os dados crescem, o que acontece com o tempo?</p>
+
+<p>| Notação | Comportamento | Exemplo |</p>
+<p>|---|---|---|</p>
+<p>| O(1) | constante — 10 ou 10M de elementos, mesmo tempo | acesso por índice |</p>
+<p>| O(n) | linear — dobrou dados, dobrou tempo | busca linear |</p>
+<p>| O(n²) | quadrático — dobrou dados, quadruplicou tempo; 100.000 elementos = 10 bilhões de operações | loops aninhados |</p>
+<p>| O(n!) | fatorial — 20 elementos = mais de 2 quintilhões (impossível) | caixeiro viajante |</p>
+
+<p>**Busca binária é poderosa**: 1 bilhão de elementos → só 30 comparações. Saber Big O é prever se o código funciona em produção ou trava com dados reais.</p>
+
+<h2>7. Recursão</h2>
+
+<p>Função que **chama a si mesma** para resolver um problema menor:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Caso base** (1ª linha): faz a recursão parar. Sem ele → loop infinito.</li>
+<li>**Caso recursivo**: divide o problema em algo menor.</li>
+<li>Cada chamada entra na **pilha de execução**; quando chega ao caso base, devolve os resultados de baixo para cima.</li>
+</ul>
+
+<p>`fatorial(5) → fatorial(4) → ... → fatorial(1) = 1 → 2 → 6 → 24 → 120`</p>
+
+<p>Recursão aparece em árvores, ordenação, fractais — até o sistema de arquivos é uma estrutura recursiva.</p>
+
+<h2>6. Concorrência e paralelismo</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Concorrência**: gerenciar várias tarefas ao mesmo tempo (um cozinheiro: põe o arroz, corta a cebola enquanto espera — mas nunca faz as duas no mesmo instante).</li>
+<li>**Paralelismo**: executar várias tarefas ao mesmo tempo (dois cozinheiros).</li>
+</ul>
+
+<p>**Race condition**: duas threads leem o saldo R$ 100 ao mesmo tempo, ambas subtraem 50, ambas gravam 50 → o saldo deveria ser 0, mas ficou 50. **Dinheiro aparece do nada.** Locks, semáforos e deadlocks existem para lidar com isso.</p>
+
+<h2>5. Compiladores e interpretadores</h2>
+
+<p>`let x = 10` — como o computador entende? O compilador:</p>
+<p>1. **Análise léxica**: quebra em tokens (`let` = reservada, `x` = identificador, `10` = número).</p>
+<p>2. **Análise sintática**: monta a **AST** (árvore sintática abstrata).</p>
+<p>3. **Otimizador**: analisa a árvore e gera código de máquina mais eficiente que o escrito.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Compilador**: traduz tudo de uma vez, gera executável → mais rápido.</li>
+<li>**Interpretador**: traduz e executa linha por linha → mais flexível.</li>
+<li>**Java/C#** ficam no meio: compilam para código intermediário que roda numa **máquina virtual**.</li>
+<li>(Vídeo dedicado: `compilador-6-etapas`.)</li>
+</ul>
+
+<h2>4. Redes e protocolos</h2>
+
+<p>Para falar com outro computador, mensagens atravessam cabos, roteadores e satélites — sem virar caos graças aos **protocolos**, organizados em **camadas**:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**HTTP** (topo): diz o que pedir — &quot;me dê a página inicial&quot;.</li>
+<li>**TCP**: garante entrega inteira; se um pedaço se perde, reenvia.</li>
+<li>**IP**: decide para onde mandar — endereço e rota.</li>
+<li>**Camada física** (base): transmite bits por cabo, Wi-Fi, fibra.</li>
+</ul>
+
+<p>Cada camada **empacota** a mensagem e manda para baixo (envelopes dentro de envelopes); do outro lado, cada camada desempacota e passa para cima.</p>
+
+<h2>3. Banco de dados</h2>
+
+<p>Variáveis **morrem** quando o programa fecha; o banco é onde a informação **sobrevive**. Por baixo de uma query simples, o banco decide: percorrer tudo ou usar índice? Sem índice lê todas as linhas; com índice pula direto aos dados — **1 segundo vs 1 ms**.</p>
+
+<p>Bancos relacionais garantem **ACID**: atomicidade (ou tudo ou nada — transferir R$ 100 sai de uma conta e entra na outra, ou nenhuma das duas), consistência, isolamento, durabilidade. Sem essas garantias, dinheiro some e sistemas quebram. (Vídeo dedicado: `banco-de-dados-8-conceitos`.)</p>
+
+<h2>2. Criptografia</h2>
+
+<p>Protege login, mensagens e pagamentos:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Hashing**: transforma dados em uma &quot;impressão digital&quot; **irreversível** (senha → hash; sites guardam o hash, nunca a senha).</li>
+<li>**Simétrica**: mesma chave para encriptar/decifrar — rápida, mas como compartilhar a chave com segurança?</li>
+<li>**Assimétrica**: **chave pública** encripta (qualquer um pode ter) + **chave privada** decifra (só você). É como o **HTTPS** funciona: o navegador usa a chave pública do servidor; só o servidor decifra com a privada.</li>
+</ul>
+
+<h2>1. Abstração — o conceito mais importante</h2>
+
+<p>Abstração é **esconder a complexidade atrás de uma interface simples** — e aparece em todos os outros nove:</p>
+
+<ul style='padding-left:1.3rem'>
+<li>Dirigir: o volante é uma abstração (não precisa saber de direção, fluido hidráulico, rodas).</li>
+<li>`fetch()`: você não precisa saber como o TCP garante entrega, como o IP roteia, como bits viram sinais.</li>
+<li>Estruturas de dados abstraem como a memória organiza bits; compiladores abstraem a tradução; bancos abstraem a persistência.</li>
+</ul>
+
+<p>**Toda evolução da computação é uma nova camada de abstração**: assembly abstraiu o binário; C abstraiu assembly; Python abstraiu C. Sem abstração, cada programa lidaria com tudo — do transistor ao pixel. Com ela, `print(&quot;hello world&quot;)` funciona.</p>
+
+<h2>Conclusão</h2>
+
+<p>&gt; Não precisa decorar tudo hoje — mas entendendo a **essência de cada conceito**, você reconhece padrões em qualquer tecnologia nova que aparecer.</p>
+
+<h2>Exemplo de código — os conceitos em 4 blocos (Python 3.14)</h2>
+
+<h3>1. Binário, lógica booleana e hash</h3>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — binario + portas logicas + hash irreversivel</span>
+a, b = 0b1010, 0b1100
+<span class="k">print</span>(<span class="s">&#x27;and:&#x27;</span>, bin(a &amp; b))    <span class="c"># 1000</span>
+<span class="k">print</span>(<span class="s">&#x27;or :&#x27;</span>, bin(a | b))    <span class="c"># 1110</span>
+<span class="k">print</span>(<span class="s">&#x27;not:&#x27;</span>, bin(~a &amp; 0b1111))  <span class="c"># 0101</span>
+
+<span class="k">import</span> hashlib
+<span class="k">print</span>(<span class="s">&#x27;sha256:&#x27;</span>, hashlib.sha256(b<span class="s">&#x27;senha123&#x27;</span>).hexdigest()[:16])
+<span class="c"># and: 0b1000</span>
+<span class="c"># or : 0b1110</span>
+<span class="c"># not: 0b101</span>
+<span class="c"># sha256: 55a5e9e78207b4df</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — busca linear vs arvore binaria (recursiva)</span>
+<span class="k">def</span> busca_linear(lista, alvo):
+    <span class="k">for</span> i, v <span class="k">in</span> enumerate(lista):
+        <span class="k">if</span> v == alvo: <span class="k">return</span> i
+    <span class="k">return</span> -1
+
+<span class="k">class</span> No:
+    <span class="k">def</span> __init__(self, v):
+        self.v, self.esq, self.dir = v, <span class="k">None</span>, <span class="k">None</span>
+
+<span class="k">def</span> inserir(raiz, v):
+    <span class="k">if</span> raiz <span class="k">is</span> <span class="k">None</span>: <span class="k">return</span> No(v)
+    <span class="k">if</span> v &lt; raiz.v: raiz.esq = inserir(raiz.esq, v)
+    <span class="k">else</span>:          raiz.dir = inserir(raiz.dir, v)
+    <span class="k">return</span> raiz
+
+<span class="k">def</span> busca_arvore(no, alvo, passos=0):
+    <span class="k">if</span> no <span class="k">is</span> <span class="k">None</span>: <span class="k">return</span> -1
+    <span class="k">if</span> alvo == no.v: <span class="k">return</span> passos
+    <span class="k">return</span> busca_arvore(no.esq <span class="k">if</span> alvo &lt; no.v <span class="k">else</span> no.dir, alvo, passos + 1)
+
+dados = list(range(1, 1001))
+raiz = <span class="k">None</span>
+<span class="c"># insere em ordem balanceada (nao sequencial!) para a arvore ficar equilibrada</span>
+<span class="k">def</span> inserir_balanceado(inicio, fim):
+    <span class="k">if</span> inicio &gt; fim: <span class="k">return</span>
+    meio = (inicio + fim) // 2
+    <span class="k">global</span> raiz
+    raiz = inserir(raiz, meio)
+    inserir_balanceado(inicio, meio - 1)
+    inserir_balanceado(meio + 1, fim)
+
+inserir_balanceado(1, 1000)
+<span class="k">print</span>(<span class="s">&#x27;linear :&#x27;</span>, busca_linear(dados, 999), <span class="s">&#x27;passos&#x27;</span>)
+<span class="k">print</span>(<span class="s">&#x27;arvore :&#x27;</span>, busca_arvore(raiz, 999), <span class="s">&#x27;passos&#x27;</span>)
+<span class="c"># linear : 998 passos</span>
+<span class="c"># arvore : 8 passos</span></pre>
+<pre class="src"><span class="c"># Python 3.14 — recursao: fatorial (linear) e fib (exponencial)</span>
+<span class="k">def</span> fatorial(n):
+    <span class="k">if</span> n &lt;= 1: <span class="k">return</span> 1            <span class="c"># caso base</span>
+    <span class="k">return</span> n * fatorial(n - 1)     <span class="c"># caso recursivo</span>
+
+<span class="k">def</span> fib(n):
+    <span class="k">if</span> n &lt; 2: <span class="k">return</span> n
+    <span class="k">return</span> fib(n - 1) + fib(n - 2) <span class="c"># O(2^n) — sobe a pilha e desce</span>
+
+<span class="k">print</span>(<span class="s">&#x27;fatorial(5):&#x27;</span>, fatorial(5))   <span class="c"># 120</span>
+<span class="k">print</span>(<span class="s">&#x27;fib(20)    :&#x27;</span>, fib(20))       <span class="c"># 6765 (O(2^n): 20 ja demora)</span>
+<span class="c"># fatorial(5): 120</span>
+<span class="c"># fib(20)    : 6765</span></pre></div>
+
+
+<h3>2. Estruturas de dados: lista vs árvore (busca)</h3>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — race: duas &quot;threads&quot; leem e gravam o mesmo saldo</span>
+<span class="k">import</span> threading, time
+saldo = {<span class="s">&#x27;v&#x27;</span>: 100}
+
+<span class="k">def</span> sacar_50():
+    leitura = saldo[<span class="s">&#x27;v&#x27;</span>]        <span class="c"># as duas leem 100</span>
+    time.sleep(0.001)           <span class="c"># forca troca de thread aqui (race!)</span>
+    saldo[<span class="s">&#x27;v&#x27;</span>] = leitura - 50   <span class="c"># as duas gravam 50</span>
+
+t1 = threading.Thread(target=sacar_50)
+t2 = threading.Thread(target=sacar_50)
+t1.start(); t2.start(); t1.join(); t2.join()
+<span class="k">print</span>(<span class="s">&#x27;saldo final:&#x27;</span>, saldo[<span class="s">&#x27;v&#x27;</span>])   <span class="c"># 50, deveria ser 0!</span>
+<span class="c"># saldo final: 50</span></pre></div>
+
+
+<h3>3. Recursão + Big O: fatorial e Fibonacci</h3>
+
+
+<div class="code2col"></div>
+
+
+<h3>4. Race condition (concorrência)</h3>
+
+
+<div class="code2col"></div>
+
+
+<p>O exemplo mostra o problema central da concorrência: mesmo em Python (GIL), a **leitura + escrita não é atômica** — duas threads podem ler o mesmo valor e gravar o mesmo resultado, perdendo uma atualização. (Detalhes e solução com lock no vídeo/SO: `so-por-baixo-dos-panos`.)</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=zLV586SXHsU">10 Conceitos que São a Base de Tudo na Computação</a> (~10:46).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>

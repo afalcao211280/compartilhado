@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente de Voz em Tempo Real (WebRTC + STT + LLM + TTS)</title>
+<style>
+  :root { --bg:#0d1117; --bg2:#161b22; --fg:#e6edf3; --muted:#8b949e;
+    --accent:#58a6ff; --accent2:#f0883e; --code-bg:#0a0e14; --border:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .wrap { max-width:100%; padding:2rem 2.5rem; margin:0 auto; }
+  h1 { font-size:1.7rem; color:var(--accent); }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2rem;
+    border-bottom:1px solid var(--border); padding-bottom:.3rem; }
+  h3 { font-size:1.05rem; color:var(--accent2); }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .combo { background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .code2col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:1100px){ .code2col{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:900px){ .code2col{ grid-template-columns:1fr; } }
+  .src { background:var(--code-bg); border:1px solid var(--border);
+    border-radius:8px; padding:.9rem 1rem; overflow-x:auto;
+    font-family:'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size:.82rem; line-height:1.5; margin:0; }
+  .k { color:#ff7b72; } .t { color:#79c0ff; } .s { color:#a5d6ff; }
+  .c { color:#8b949e; font-style:italic; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border);
+    color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Agente de Voz em Tempo Real (WebRTC + STT + LLM + TTS)</h1>
+  <p class="meta">Fonte: <a href="https://www.youtube.com/watch?v=BGkqpw_QY-k">https://www.youtube.com/watch?v=BGkqpw_QY-k</a> · pt-BR · ~18:34 · 30/08/2026</p>
+
+<h1>Resumo — &quot;Agente de Voz em Tempo Real: WebRTC, STT, LLM, TTS&quot; (pt-BR, ~18:34)</h1>
+
+<p>Fonte: https://www.youtube.com/watch?v=BGkqpw_QY-k</p>
+<p>Data: 30/08/2026 | Transcrição: /tmp/tr_voz.json</p>
+
+<h2>Tese central</h2>
+
+<p>&gt; Uma conversa por voz com IA parece mágica, mas é um **orquestramento de tecnologias** — WebRTC (mídia), STT (sua fala → texto), LLM (texto → resposta), TTS (resposta → voz) e turn detection (saber quando você terminou de falar). O projeto open-source de referência coordena tudo isso, e cada etapa é visível de propósito.</p>
+
+<h2>Arquitetura em 5 partes</h2>
+
+<p>1. **App React**: captura o microfone, mostra os estados da sessão, renderiza a transcrição.</p>
+<p>2. **Servidor Node**: cria a **credencial temporária (JWT)** que permite entrar numa sala.</p>
+<p>3. **LiveKit Cloud**: gerencia a sala e transporta as faixas de áudio com **WebRTC**.</p>
+<p>4. **Worker**: entra como participante, escuta o usuário, chama os modelos e &quot;publica&quot; a própria voz.</p>
+<p>5. **LiveKit Inference**: acessa os modelos de fala e linguagem configurados no agente.</p>
+
+<p>&gt; O navegador **nunca recebe a chave privada** do projeto — a segurança é isolada no backend.</p>
+
+<h2>O fluxo de entrada (token)</h2>
+
+<p>1. A UI faz `GET /api/config` → descobre o nome público do agente.</p>
+<p>2. `TokenSource` faz `POST /api/token` → o servidor cria um **nome de sala aleatório** e uma **identidade aleatória de participante** (toda a lógica isolada no backend — o cliente não escolhe sala conhecida nem injeta outro agente).</p>
+<p>3. O token gerado permite **só aquela sala** e **só publicar o microfone** (câmera e dados fora do escopo).</p>
+<p>4. Validade do token: **10 minutos** apenas para entrar — não afeta a conversa que já começou (evita problemas se a credencial vazar). Durante a sessão, o LiveKit atualiza a credencial internamente.</p>
+<p>5. O token carrega o **nome do agente**; quando a sala abre, o LiveKit &quot;entrega o trabalho&quot; ao worker — o **dispatch**.</p>
+
+<h2>WebRTC e o SFU</h2>
+
+<p>**WebRTC** é a tecnologia nativa do navegador para mídia em tempo real — conexão direta entre dois peers. Mas o LiveKit usa um **SFU** (Selective Forwarding Unit):</p>
+
+<ul style='padding-left:1.3rem'>
+<li>O SFU recebe o áudio de **cada participante** e encaminha cada faixa **só para quem precisa** — ninguém cria conexões diretas entre si.</li>
+<li>O agente também entra na sala e abre conexão com o SFU → recebe os pacotes **já codificados** (o SFU **não decodifica/mixa/re-codifica** — só encaminha).</li>
+<li>Como a mídia passa pelo SFU, o LiveKit mede **perda de pacotes** e qualidade, e o transporte cresce separado do frontend.</li>
+<li>Antes do primeiro pacote, navegador e LiveKit **negociam a conexão** num **WebSocket** (canal de controle; o áudio em si vai pelo WebRTC). O servidor avisa quando participantes/faixas mudam.</li>
+<li>O SDK esconde os detalhes: a aplicação só trabalha com **salas, participantes e faixas**.</li>
+</ul>
+
+<h2>O pipeline de áudio (em cascata)</h2>
+
+<p>1. **Captura do microfone** → WebRTC processa o áudio (com cancelamento de eco, redução de ruído).</p>
+<p>2. **Filtro no servidor**: o worker aplica outra limpeza para **isolar a voz do usuário** (evita que a TV de fundo vire &quot;palavras que a pessoa nunca disse&quot; e que o turn detector interrompa à toa).</p>
+<p>3. **STT** (speech-to-text): transforma fala em texto — no projeto, **Deepgram Nova 3** configurado para **pt-BR**. Vai devolvendo **trechos** enquanto a pessoa fala (streaming) — a sessão acumula na ordem.</p>
+<p>4. **LLM**: recebe fala + histórico + instruções — **Gemma 3 27B** (Google) gera a resposta em texto.</p>
+<p>5. **TTS** (text-to-speech): converte a resposta em áudio com a **voz em português** configurada — e o agente **publica essa faixa na sala**; o navegador pede para recebê-la e reproduz.</p>
+
+<p>Todas as três chamadas passam pelo **LiveKit Inference** — centraliza e permite **trocar o STT sem trocar a voz** (cada etapa usa modelo separado, mensurável isoladamente).</p>
+
+<h3>Por que em cascata (e quando não)</h3>
+
+<ul style='padding-left:1.3rem'>
+<li>**+**: flexibilidade para trocar modelos, medição isolada, custo controlado.</li>
+<li>**−**: **encadeia latência** (cada etapa soma até o primeiro áudio) e a LLM **não entende entonação** — só texto.</li>
+<li>Alternativa: **modelo speech-to-speech** (áudio → áudio direto, usa mais sinais da voz, pula conversões) — mas com menos controle e **custo bem maior**.</li>
+</ul>
+
+<h2>VAD e turn detection (quando você terminou de falar?)</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**VAD** (voice activity detection): marca quais trechos têm fala e quais são silêncio. O problema: silêncio **no meio** da frase (&quot;Eu preciso remarcar a entrega para… **para**&quot;) terminaria o turno com frase incompleta.</li>
+<li>O projeto usa um **inference turn detector** que analisa o áudio: **sentido da fala, entonação, tom, ritmo, silêncio** para calcular se a ideia terminou.</li>
+<li>**Endpointing**: mesmo se o algoritmo achar que terminou, a sessão **espera um pouco**; se a pessoa continuar, as novas palavras entram no **mesmo turno**; se não vier áudio novo, confirma o fim e libera a resposta.</li>
+<li>Valores padrão do SDK servem para demo; **produção precisa calibrar** conforme o uso real.</li>
+</ul>
+
+<h2>Interrupção (barge-in e back-channel)</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>O microfone do usuário **continua aberto** durante a resposta.</li>
+<li>**Back-channel** (&quot;beleza&quot;, &quot;uhum&quot;): sinal de que está acompanhando → **não** interrompe.</li>
+<li>**Barge-in** (&quot;na verdade, quis dizer outra coisa&quot;): o sistema **interrompe a reprodução, descarta o áudio não tocado e abre novo turno**.</li>
+<li>O SDK usa **modo adaptativo**: se a nova fala não parece intencional, **retoma a resposta** de onde parou.</li>
+<li>Ao interromper, o SDK **corta o histórico até o ponto que a pessoa ouviu** (3 frases → ouviu 1 → histórico só registra 1).</li>
+</ul>
+
+<h2>Medindo a latência (os marcadores)</h2>
+
+<p>1. Última sílaba da pessoa → 2. confirmação do fim do turno (**end of utterance delay**) → 3. STT finaliza → 4. LLM devolve o 1º token → 5. TTS produz 1º áudio → 6. áudio atravessa o LiveKit → 7. reprodução no navegador.</p>
+
+<ul style='padding-left:1.3rem'>
+<li>**Jitter**: pacotes chegam a intervalos diferentes (rede varia). O **jitter buffer** guarda pacotes por alguns ms e libera num ritmo constante → menos cortes, um pouco mais de atraso.</li>
+<li>**Streaming**: o TTS roda enquanto a LLM gera o resto (não espera a resposta inteira).</li>
+<li>**Preemptive generation**: aciona a LLM **antes** da confirmação final do turno (quando a transcrição parece ter terminado). Se acertar → adianta; se errar → descarta e recomeça (custou processamento/tokens). No projeto, o TTS espera o turno confirmado.</li>
+<li>**Produção**: cada marcador precisa de **timestamp** para mostrar qual etapa mais atrasa a resposta.</li>
+</ul>
+
+<h2>Do demo ao produto (production hardening)</h2>
+
+<ul style='padding-left:1.3rem'>
+<li>**Autenticação/autorização**: antes de publicar, o backend precisa autenticar a pessoa e autorizar a criação da sessão.</li>
+<li>**Rate limiting + concorrência + duração + consumo acumulado**: chamadas anônimas podem escalar custo (cada sessão despacha worker + STT + LLM + TTS). O token não limita quem pede — **CORS** só bloqueia páginas não autorizadas.</li>
+<li>**Estado**: hoje a transcrição vive só na memória do navegador (refresh = perde tudo). O backend não guarda estado — precisa de um **registro de sessão** em banco (sala ↔ usuário) e **chave de idempotência** (uma tentativa repetida devolve a sessão pendente, não cria outra).</li>
+<li>**Privacidade/LGPD**: `record: false` — sem gravação, mas os provedores **processam o áudio**; documentar quem recebe dados e por quanto tempo.</li>
+<li>**Observabilidade**: com tracing ligado, medir qual modelo demorou e o consumo por sessão **sem registrar o conteúdo da conversa**.</li>
+<li>**Estratégia de falha**: definir quais falhas permitem nova tentativa e quando a conversa termina de fato.</li>
+</ul>
+
+<h2>Conclusão</h2>
+
+<p>Cada ms conta — a sensação de &quot;conversa com humano&quot; é o resultado de **orquestrar mídia, modelos e turnos** com medição contínua, e de blindar o backend para virar produto (auth, rate limit, sessão, idempotência, privacidade).</p>
+
+<h2>Exemplo de código — jitter buffer (Python 3.14)</h2>
+
+
+<div class="code2col"><pre class="src"><span class="c"># Python 3.14 — rajadas de pacotes; buffer drena 1 por tick (ritmo constante)</span>
+<span class="k">from</span> collections <span class="k">import</span> deque
+
+<span class="k">class</span> JitterBuffer:
+    <span class="k">def</span> __init__(self):
+        self.fila = deque()
+        self.saidas = []
+
+    <span class="k">def</span> adicionar(self, pacote):
+        self.fila.append(pacote)          <span class="c"># rajada entra de uma vez</span>
+
+    <span class="k">def</span> tick(self):
+        <span class="c"># drena no maximo 1 pacote por tick de reproducao</span>
+        self.saidas.append(self.fila.popleft() <span class="k">if</span> self.fila <span class="k">else</span> <span class="s">&quot;_&quot;</span>)
+
+jb = JitterBuffer()
+<span class="c"># a rede entrega em rajadas: 3 pacotes juntos, depois 2, depois 1</span>
+<span class="k">for</span> p <span class="k">in</span> [<span class="s">&quot;p0&quot;</span>, <span class="s">&quot;p1&quot;</span>, <span class="s">&quot;p2&quot;</span>]: jb.adicionar(p)
+<span class="k">for</span> _ <span class="k">in</span> range(3): jb.tick()              <span class="c"># sai p0, p1, p2 em ticks separados</span>
+<span class="k">for</span> p <span class="k">in</span> [<span class="s">&quot;p3&quot;</span>, <span class="s">&quot;p4&quot;</span>]: jb.adicionar(p)
+<span class="k">for</span> _ <span class="k">in</span> range(2): jb.tick()              <span class="c"># sai p3, p4</span>
+jb.adicionar(<span class="s">&quot;p5&quot;</span>)
+<span class="k">for</span> _ <span class="k">in</span> range(3): jb.tick()              <span class="c"># sai p5, depois gaps</span>
+<span class="k">print</span>(<span class="s">&quot;reproducao:&quot;</span>, <span class="s">&quot; &quot;</span>.join(jb.saidas))
+<span class="c"># reproducao: p0 p1 p2 p3 p4 p5 _ _</span></pre></div>
+
+
+<p>O jitter buffer **suaviza as rajadas**: os pacotes chegam em grupos (a rede oscila), mas a reprodução drena **um por tick a cada 0.1s** — o áudio sai num ritmo constante, sem cortes. O custo é o pequeno atraso adicional (guardar = atrasar).</p>
+
+  <footer>
+    Resumo: 30/08/2026. Fonte: <a href="https://www.youtube.com/watch?v=BGkqpw_QY-k">Agente de Voz em Tempo Real (WebRTC + STT + LLM + TTS)</a> (~18:34).
+    Código validado por execução real (mesmos blocos do MD). Linguagens: Java 26, Go 1.26, Python 3.14, Node 24.
+  </footer>
+</div>
+</body>
+</html>
